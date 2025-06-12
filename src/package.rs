@@ -25,6 +25,7 @@ pub struct Package {
 
 impl Package {
     /// Create new package
+    #[must_use]
     pub fn new(pass: Pass) -> Self {
         Self {
             pass,
@@ -36,37 +37,35 @@ impl Package {
     /// Read compressed package (.pkpass) from file.
     ///
     /// Use for creating .pkpass file from template.
+    /// # Errors
+    /// Returns an error if the pass cannot be read
     pub fn read<R: Read + Seek>(reader: R) -> Result<Self, &'static str> {
         // Read .pkpass as zip
-        let mut zip = zip::ZipArchive::new(reader).expect("Error unzipping pkpass");
+        let mut zip = zip::ZipArchive::new(reader).map_err(|_| "Error unzipping pkpass")?;
 
         let mut pass: Option<Pass> = None;
         let mut resources = Vec::<Resource>::new();
 
         for i in 0..zip.len() {
             // Get file name
-            let mut file = zip.by_index(i).unwrap();
+            let mut file = zip.by_index(i).map_err(|_| "Failed to get zip chunk")?;
             let filename = file.name();
             // Read pass.json file
             if filename == "pass.json" {
                 let mut buf = String::new();
                 file.read_to_string(&mut buf)
-                    .expect("Error while reading pass.json");
-                pass = Some(Pass::from_json(&buf).expect("Error while parsing pass.json"));
+                    .map_err(|_| "failed to read file")?;
+                pass = Some(Pass::from_json(&buf).map_err(|_| "Error while parsing pass.json")?);
                 continue;
             }
             // Read resource files
-            match resource::Type::from_str(filename) {
-                // Match resource type by template
-                Ok(t) => {
-                    let mut resource = Resource::new(t);
-                    std::io::copy(&mut file, &mut resource)
-                        .expect("Error while reading resource file");
-                    resources.push(resource);
-                }
-                // Skip unknown files
-                Err(_) => {}
+            if let Ok(t) = resource::Type::from_str(filename) {
+                let mut resource = Resource::new(t);
+                std::io::copy(&mut file, &mut resource)
+                    .map_err(|_| "Error while reading resource file")?;
+                resources.push(resource);
             }
+            // Skip unknown files
         }
 
         // Check is pass.json successfully read
@@ -93,37 +92,37 @@ impl Package {
         let mut manifest = Manifest::new();
 
         let mut zip = zip::ZipWriter::new(writer);
-        let options =
-            zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
 
         // Adding pass.json to zip
         zip.start_file("pass.json", options)
-            .expect("Error while creating pass.json in zip");
+            .map_err(|_| "Error while creating pass.json in zip")?;
         let pass_json = self
             .pass
             .make_json()
-            .expect("Error while building pass.json");
+            .map_err(|_| "Error while building pass.json")?;
         zip.write_all(pass_json.as_bytes())
-            .expect("Error while writing pass.json in zip");
+            .map_err(|_| "Error while writing pass.json in zip")?;
         manifest.add_item("pass.json", pass_json.as_bytes());
 
         // Adding each resource files to zip
         for resource in &self.resources {
             zip.start_file(resource.filename(), options)
-                .expect("Error while creating resource file in zip");
+                .map_err(|_| "Error while creating resource file in zip")?;
             zip.write_all(resource.as_bytes())
-                .expect("Error while writing resource file in zip");
+                .map_err(|_| "Error while writing resource file in zip")?;
             manifest.add_item(resource.filename().as_str(), resource.as_bytes());
         }
 
         // Adding manifest.json to zip
         zip.start_file("manifest.json", options)
-            .expect("Error while creating manifest.json in zip");
+            .map_err(|_| "Error while creating manifest.json in zip")?;
         let manifest_json = manifest
             .make_json()
-            .expect("Error while generating manifest file");
+            .map_err(|_| "Error while generating manifest file")?;
         zip.write_all(manifest_json.as_bytes())
-            .expect("Error while writing manifest.json in zip");
+            .map_err(|_| "Error while writing manifest.json in zip")?;
         manifest.add_item("manifest.json", manifest_json.as_bytes());
 
         // If SignConfig is provided, make signature
@@ -131,10 +130,11 @@ impl Package {
             // Make signature without signing content
             let flags = openssl::pkcs7::Pkcs7Flags::DETACHED;
             // Add WWDR cert to chain
-            let mut certs = openssl::stack::Stack::new().expect("Error while prepare certificate");
+            let mut certs =
+                openssl::stack::Stack::new().map_err(|_| "Error while prepare certificate")?;
             certs
                 .push(sign_config.cert.clone())
-                .expect("Error while prepare certificate");
+                .map_err(|_| "Error while prepare certificate")?;
 
             // Signing
             let pkcs7 = openssl::pkcs7::Pkcs7::sign(
@@ -144,19 +144,21 @@ impl Package {
                 manifest_json.as_bytes(),
                 flags,
             )
-            .expect("Error while signing package");
+            .map_err(|_| "Error while signing package")?;
 
             // Generate signature
-            let signature_data = pkcs7.to_der().expect("Error while generating signature");
+            let signature_data = pkcs7
+                .to_der()
+                .map_err(|_| "Error while generating signature")?;
 
             // Adding signature to zip
             zip.start_file("signature", options)
-                .expect("Error while creating signature in zip");
+                .map_err(|_| "Error while creating signature in zip")?;
             zip.write_all(&signature_data)
-                .expect("Error while writing signature in zip");
+                .map_err(|_| "Error while writing signature in zip")?;
         }
 
-        zip.finish().expect("Error while saving zip");
+        zip.finish().map_err(|_| "Error while saving zip")?;
 
         Ok(())
     }
@@ -164,13 +166,15 @@ impl Package {
     /// Adding image file to package.
     ///
     /// Reading file to internal buffer storage.
+    /// # Errors
+    /// Returns an error if the writing of the resource fails
     pub fn add_resource<R: Read>(
         &mut self,
         image_type: resource::Type,
         mut reader: R,
     ) -> Result<(), &'static str> {
         let mut resource = Resource::new(image_type);
-        std::io::copy(&mut reader, &mut resource).expect("Error while reading resource");
+        std::io::copy(&mut reader, &mut resource).map_err(|_| "Error while reading resource")?;
         self.resources.push(resource);
         Ok(())
     }
@@ -216,12 +220,12 @@ mod tests {
         let mut package = Package::new(pass);
 
         // Save package as .pkpass
-        let mut buf = [0; 65536];
-        let writer = std::io::Cursor::new(&mut buf[..]);
+        let mut buf = Vec::new();
+        let writer = std::io::Cursor::new(&mut buf);
         package.write(writer).unwrap();
 
         // Read .pkpass as zip
-        let reader = std::io::Cursor::new(&mut buf[..]);
+        let reader = std::io::Cursor::new(&mut buf);
         let mut zip = zip::ZipArchive::new(reader).unwrap();
 
         for i in 0..zip.len() {
@@ -265,8 +269,8 @@ mod tests {
             .unwrap();
 
         // Save package as .pkpass
-        let mut buf = [0; 65536];
-        let writer = std::io::Cursor::new(&mut buf[..]);
+        let mut buf = Vec::new();
+        let writer = std::io::Cursor::new(&mut buf);
         package.write(writer).unwrap();
 
         // Read .pkpass
@@ -280,7 +284,7 @@ mod tests {
         // Check assets
         println!("{:?}", package.resources);
         assert_eq!(2, package.resources.len());
-        assert_eq!("icon.png", package.resources.get(0).unwrap().filename());
+        assert_eq!("icon.png", package.resources.first().unwrap().filename());
         assert_eq!("logo@3x.png", package.resources.get(1).unwrap().filename());
     }
 }

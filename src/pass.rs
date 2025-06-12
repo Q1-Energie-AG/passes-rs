@@ -20,9 +20,9 @@ pub mod semantic_tags;
 pub mod visual_appearance;
 pub mod web_service;
 
-/// Required fields for [Pass]
+///  Required fields for `Pass`
 ///
-/// Used for [Pass] construction
+///  Used for `Pass` construction
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PassConfig {
@@ -46,7 +46,7 @@ pub struct PassConfig {
 
 /// Represents a pass (pass.json file)
 ///
-/// Example for making [Pass] with [PassConfig]:
+/// Example for making `Pass` with `PassConfig`:
 ///
 /// ```
 /// use passes::{PassBuilder, PassConfig};
@@ -71,7 +71,7 @@ pub struct Pass {
 
     /// An identifier the system uses to group related boarding passes or event tickets.
     ///
-    /// Wallet displays passes with the same [grouping_identifier](Pass::grouping_identifier), [pass_type_identifier](PassConfig::pass_type_identifier), and type as a group.
+    /// Wallet displays passes with the same `grouping_identifier`(`Pass::grouping_identifier`), `pass_type_identifier`(`PassConfig::pass_type_identifier`), and type as a group.
     ///
     /// Use this identifier to group passes that are tightly related, such as boarding passes for different connections on the same trip.
     #[serde(default)]
@@ -114,7 +114,7 @@ pub struct Pass {
 
     /// Implement a web server to register, update, and unregister a pass on a device.
     ///
-    /// See [Apple documentation](https://developer.apple.com/documentation/walletpasses/adding_a_web_service_to_update_passes)
+    ///  See [Apple documentation](https://developer.apple.com/documentation/walletpasses/adding_a_web_service_to_update_passes)
     #[serde(default)]
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -160,7 +160,7 @@ pub struct Pass {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<Location>,
 
-    /// The maximum distance, in meters, from a location in the [locations](Pass::locations) array at which the pass is relevant.
+    ///  The maximum distance, in meters, from a location in the  `locations`(`Pass::locations`) array at which the pass is relevant.
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_distance: Option<u32>,
@@ -201,58 +201,18 @@ impl Pass {
     /// .build();
     ///
     /// let json = pass.make_json().unwrap();
-    ///
-    /// let json_expected = r#"{
-    ///   "formatVersion": 1,
-    ///   "organizationName": "Apple inc.",
-    ///   "description": "Example pass",
-    ///   "passTypeIdentifier": "com.example.pass",
-    ///   "teamIdentifier": "AA00AA0A0A",
-    ///   "serialNumber": "ABCDEFG1234567890",
-    ///   "generic": {
-    ///     "auxiliaryFields": [],
-    ///     "backFields": [],
-    ///     "headerFields": [],
-    ///     "primaryFields": [],
-    ///     "secondaryFields": []
-    ///   }
-    /// }"#;
-    ///
-    /// assert_eq!(json_expected, json);
     /// ```
+    /// # Errors
+    /// Returns a `serde_json` error if encoding fails
     pub fn make_json(&self) -> Result<String, serde_json::Error> {
-        let json = serde_json::to_string_pretty(&self)?;
-        Ok(json)
+        serde_json::to_string(&self)
     }
 
     /// Build pass (pass.json) from json data
-    ///
-    /// ```
-    /// use passes::Pass;
-    ///
-    /// let json_expected = r#"{
-    ///   "formatVersion": 1,
-    ///   "organizationName": "Apple inc.",
-    ///   "description": "Example pass",
-    ///   "passTypeIdentifier": "com.example.pass",
-    ///   "teamIdentifier": "AA00AA0A0A",
-    ///   "serialNumber": "ABCDEFG1234567890",
-    ///   "generic": {
-    ///     "auxiliaryFields": [],
-    ///     "backFields": [],
-    ///     "headerFields": [],
-    ///     "primaryFields": [],
-    ///     "secondaryFields": []
-    ///   }
-    /// }"#;
-    ///
-    /// let pass: Pass = Pass::from_json(json_expected).unwrap();
-    /// let json = pass.make_json().unwrap();
-    /// assert_eq!(json_expected, json);
-    /// ```
+    /// # Errors
+    /// Returns a `serde_json` error if decoding fails
     pub fn from_json(data: &str) -> Result<Self, serde_json::Error> {
-        let pass: Pass = serde_json::from_str(data)?;
-        Ok(pass)
+        serde_json::from_str(data)
     }
 }
 
@@ -263,6 +223,7 @@ pub struct PassBuilder {
 
 impl PassBuilder {
     /// Creates builder for `Pass`.
+    #[must_use]
     pub fn new(config: PassConfig) -> Self {
         let pass = Pass {
             // setup required vars
@@ -285,7 +246,7 @@ impl PassBuilder {
             locations: Vec::new(),
             max_distance: None,
             nfc: None,
-            semantics: Default::default(),
+            semantics: SemanticTags::default(),
             fields: fields::Type::Generic {
                 pass_fields: fields::Fields {
                     ..Default::default()
@@ -295,25 +256,28 @@ impl PassBuilder {
         Self { pass }
     }
 
-    /// Adding [grouping_identifier](Pass::grouping_identifier)
+    /// Adding `grouping_identifier` (`Pass::grouping_identifier`)
+    #[must_use]
     pub fn grouping_identifier(mut self, field: String) -> PassBuilder {
         self.pass.grouping_identifier = Some(field);
         self
     }
 
-    /// Adding [appearance](Pass::appearance).
+    /// Adding `appearance` (`Pass::appearance`).
+    #[must_use]
     pub fn appearance(mut self, field: VisualAppearance) -> PassBuilder {
         self.pass.appearance = Some(field);
         self
     }
 
-    /// Adding [logo_text](Pass::logo_text)
+    /// Adding `logo_text` (`Pass::logo_text`)
+    #[must_use]
     pub fn logo_text(mut self, field: String) -> PassBuilder {
         self.pass.logo_text = Some(field);
         self
     }
 
-    /// Adding [relevant_date](Pass::relevant_date)
+    /// Adding `relevant_date` (`Pass::relevant_date`)
     ///
     /// ```
     /// use chrono::prelude::*;
@@ -327,66 +291,79 @@ impl PassBuilder {
     ///     serial_number: String::from("ABCDEFG1234567890"),
     /// }).relevant_date(Utc.with_ymd_and_hms(2024, 02, 07, 0, 0, 0).unwrap());
     /// ```
+    #[must_use]
     pub fn relevant_date(mut self, field: DateTime<Utc>) -> PassBuilder {
         self.pass.relevant_date = Some(field);
         self
     }
 
-    /// Adding [expiration_date](Pass::expiration_date)
+    ///  Adding  `expiration_date`(`Pass::expiration_date`)
+    #[must_use]
     pub fn expiration_date(mut self, field: DateTime<Utc>) -> PassBuilder {
         self.pass.expiration_date = Some(field);
         self
     }
 
-    /// Adding [app_launch_url](Pass::app_launch_url)
+    ///  Adding  `app_launch_url`(`Pass::app_launch_url`)
+    #[must_use]
     pub fn app_launch_url(mut self, field: String) -> PassBuilder {
         self.pass.app_launch_url = Some(field);
         self
     }
 
-    /// Adding [associated_store_identifiers](Pass::associated_store_identifiers)
+    ///  Adding  `associated_store_identifiers`(`Pass::associated_store_identifiers`)
+    #[must_use]
     pub fn add_associated_store_identifier(mut self, id: i32) -> PassBuilder {
         self.pass.associated_store_identifiers.push(id);
         self
     }
 
-    /// Adding [web_service_url](WebService::web_service_url)
+    ///  Adding  `web_service_url`(`WebService::web_service_url`)
+    #[must_use]
     pub fn web_service(mut self, web_service: WebService) -> PassBuilder {
         self.pass.web_service = Some(web_service);
         self
     }
 
-    /// Adding [sharing_prohibited](Pass::sharing_prohibited)
+    ///  Adding  `sharing_prohibited`(`Pass::sharing_prohibited`)
+    #[must_use]
     pub fn set_sharing_prohibited(mut self, field: bool) -> PassBuilder {
         self.pass.sharing_prohibited = field;
         self
     }
 
-    /// Adding [suppress_strip_shine](Pass::suppress_strip_shine)
+    ///  Adding  `suppress_strip_shine`(`Pass::suppress_strip_shine`)
+    #[must_use]
     pub fn set_suppress_strip_shine(mut self, field: bool) -> PassBuilder {
         self.pass.suppress_strip_shine = field;
         self
     }
 
-    /// Adding [voided](Pass::voided)
+    ///  Adding  `voided`(`Pass::voided`)
+    #[must_use]
     pub fn voided(mut self, field: bool) -> PassBuilder {
         self.pass.voided = field;
         self
     }
 
-    /// Adding [Barcode] to [barcodes](Pass::barcodes)
+    ///  Adding [Barcode] to  `barcodes`(`Pass::barcodes`)
+    #[must_use]
     pub fn add_barcode(mut self, barcode: Barcode) -> PassBuilder {
         self.pass.barcodes.push(barcode);
         self
     }
 
-    /// Adding [Beacon] to [beacons](Pass::beacons)
+    ///  Adding [Beacon] to  `beacons`(`Pass::beacons`)
+    #[must_use]
     pub fn add_beacon(mut self, beacon: Beacon) -> PassBuilder {
         self.pass.beacons.push(beacon);
         self
     }
 
-    /// Adding [Location] to [locations](Pass::locations)
+    ///  Adding [Location] to  `locations`(`Pass::locations`)
+    /// # Panics
+    /// If more than 10 locations are added this function will panic
+    #[must_use]
     pub fn add_location(mut self, location: Location) -> PassBuilder {
         assert!(
             self.pass.locations.len() < 10,
@@ -396,19 +373,21 @@ impl PassBuilder {
         self
     }
 
-    /// Adding [max_distance](Pass::max_distance)
+    ///  Adding  `max_distance`(`Pass::max_distance`)
+    #[must_use]
     pub fn max_distance(mut self, field: u32) -> PassBuilder {
         self.pass.max_distance = Some(field);
         self
     }
 
-    /// Adding [nfc](Pass::nfc)
+    ///  Adding  `nfc`(`Pass::nfc`)
+    #[must_use]
     pub fn nfc(mut self, field: NFC) -> PassBuilder {
         self.pass.nfc = Some(field);
         self
     }
 
-    /// Adding [semantics](Pass::semantics)
+    ///  Adding  `semantics`(`Pass::semantics`)
     ///
     /// ```
     /// use passes::{PassBuilder, PassConfig, semantic_tags};
@@ -429,12 +408,13 @@ impl PassBuilder {
     ///     ..Default::default()
     /// });
     /// ```
+    #[must_use]
     pub fn semantics(mut self, field: SemanticTags) -> PassBuilder {
         self.pass.semantics = field;
         self
     }
 
-    /// Adding [fields](Pass::fields)
+    ///  Adding  `fields`(`Pass::fields`)
     ///
     /// ```
     /// use passes::{PassBuilder, PassConfig, fields};
@@ -470,15 +450,32 @@ impl PassBuilder {
     ///     },
     /// )));
     /// ```
+    #[must_use]
     pub fn fields(mut self, field: fields::Type) -> PassBuilder {
         self.pass.fields = field;
         self
     }
 
     /// Makes `Pass`.
+    #[must_use]
     pub fn build(self) -> Pass {
         self.pass
     }
+}
+
+// For serde skipping - if boolean false
+fn _is_false(b: &bool) -> bool {
+    !b
+}
+
+// For serde skipping - if boolean true
+fn _is_true(b: &bool) -> bool {
+    *b
+}
+
+// For serde (default boolean - true)
+const fn _default_true() -> bool {
+    true
 }
 
 #[cfg(test)]
@@ -504,21 +501,7 @@ mod tests {
 
         println!("{}", json);
 
-        let json_expected = r#"{
-  "formatVersion": 1,
-  "organizationName": "Apple inc.",
-  "description": "Example pass",
-  "passTypeIdentifier": "com.example.pass",
-  "teamIdentifier": "AA00AA0A0A",
-  "serialNumber": "ABCDEFG1234567890",
-  "generic": {
-    "auxiliaryFields": [],
-    "backFields": [],
-    "headerFields": [],
-    "primaryFields": [],
-    "secondaryFields": []
-  }
-}"#;
+        let json_expected = r#"{"formatVersion":1,"organizationName":"Apple inc.","description":"Example pass","passTypeIdentifier":"com.example.pass","teamIdentifier":"AA00AA0A0A","serialNumber":"ABCDEFG1234567890","generic":{"auxiliaryFields":[],"backFields":[],"headerFields":[],"primaryFields":[],"secondaryFields":[]}}"#;
 
         assert_eq!(json_expected, json);
 
@@ -646,102 +629,7 @@ mod tests {
 
         println!("{}", json);
 
-        let json_expected = r#"{
-  "formatVersion": 1,
-  "organizationName": "Apple inc.",
-  "description": "Example pass",
-  "passTypeIdentifier": "com.example.pass",
-  "teamIdentifier": "AA00AA0A0A",
-  "serialNumber": "ABCDEFG1234567890",
-  "groupingIdentifier": "com.example.pass.app",
-  "foregroundColor": "rgb(250, 10, 10)",
-  "backgroundColor": "rgb(255, 255, 255)",
-  "logoText": "Test pass",
-  "relevantDate": "2024-02-07T00:00:00+00:00",
-  "expirationDate": "2024-02-08T00:00:00+00:00",
-  "appLaunchURL": "testapp:param?index=1",
-  "associatedStoreIdentifiers": [
-    100
-  ],
-  "authenticationToken": "abcdefg01234567890abcdefg",
-  "webServiceURL": "https://example.com/passes/",
-  "suppressStripShine": false,
-  "barcodes": [
-    {
-      "message": "Hello world!",
-      "format": "PKBarcodeFormatQR",
-      "altText": "test by test",
-      "messageEncoding": "iso-8859-1"
-    }
-  ],
-  "beacons": [
-    {
-      "proximityUUID": "e286373b-15b5-4f4e-bf91-e9e64787724a",
-      "major": 2,
-      "minor": 150,
-      "relevantText": "The simple beacon"
-    }
-  ],
-  "locations": [
-    {
-      "latitude": 37.334606,
-      "longitude": -122.009102,
-      "relevantText": "Apple Park, Cupertino, CA, USA"
-    }
-  ],
-  "maxDistance": 1000,
-  "nfc": {
-    "encryptionPublicKey": "ABCDEFG_0011223344556677889900",
-    "message": "test message",
-    "requiresAuthentication": false
-  },
-  "semantics": {
-    "airlineCode": "EX123",
-    "departureLocation": {
-      "latitude": 43.3948533,
-      "longitude": 132.1451673
-    }
-  },
-  "boardingPass": {
-    "auxiliaryFields": [
-      {
-        "key": "date_departure",
-        "value": "20.02.2024",
-        "label": "Departure date"
-      }
-    ],
-    "backFields": [],
-    "headerFields": [
-      {
-        "key": "serial",
-        "value": "1122",
-        "label": "SERIAL"
-      },
-      {
-        "key": "number",
-        "value": "0011223344",
-        "label": "NUMBER",
-        "textAlignment": "PKTextAlignmentRight"
-      }
-    ],
-    "primaryFields": [
-      {
-        "key": "from",
-        "value": "UHWW",
-        "label": "FROM",
-        "textAlignment": "PKTextAlignmentLeft"
-      },
-      {
-        "key": "to",
-        "value": "RKSI",
-        "label": "TO",
-        "textAlignment": "PKTextAlignmentRight"
-      }
-    ],
-    "secondaryFields": [],
-    "transitType": "PKTransitTypeAir"
-  }
-}"#;
+        let json_expected = r#"{"formatVersion":1,"organizationName":"Apple inc.","description":"Example pass","passTypeIdentifier":"com.example.pass","teamIdentifier":"AA00AA0A0A","serialNumber":"ABCDEFG1234567890","groupingIdentifier":"com.example.pass.app","foregroundColor":"rgb(250, 10, 10)","backgroundColor":"rgb(255, 255, 255)","logoText":"Test pass","relevantDate":"2024-02-07T00:00:00+00:00","expirationDate":"2024-02-08T00:00:00+00:00","appLaunchURL":"testapp:param?index=1","associatedStoreIdentifiers":[100],"authenticationToken":"abcdefg01234567890abcdefg","webServiceURL":"https://example.com/passes/","suppressStripShine":false,"barcodes":[{"message":"Hello world!","format":"PKBarcodeFormatQR","altText":"test by test","messageEncoding":"iso-8859-1"}],"beacons":[{"proximityUUID":"e286373b-15b5-4f4e-bf91-e9e64787724a","major":2,"minor":150,"relevantText":"The simple beacon"}],"locations":[{"latitude":37.334606,"longitude":-122.009102,"relevantText":"Apple Park, Cupertino, CA, USA"}],"maxDistance":1000,"nfc":{"encryptionPublicKey":"ABCDEFG_0011223344556677889900","message":"test message","requiresAuthentication":false},"semantics":{"airlineCode":"EX123","departureLocation":{"latitude":43.3948533,"longitude":132.1451673}},"boardingPass":{"auxiliaryFields":[{"key":"date_departure","value":"20.02.2024","label":"Departure date"}],"backFields":[],"headerFields":[{"key":"serial","value":"1122","label":"SERIAL"},{"key":"number","value":"0011223344","label":"NUMBER","textAlignment":"PKTextAlignmentRight"}],"primaryFields":[{"key":"from","value":"UHWW","label":"FROM","textAlignment":"PKTextAlignmentLeft"},{"key":"to","value":"RKSI","label":"TO","textAlignment":"PKTextAlignmentRight"}],"secondaryFields":[],"transitType":"PKTransitTypeAir"}}"#;
 
         assert_eq!(json_expected, json);
 
@@ -750,19 +638,4 @@ mod tests {
         let json = pass.make_json().unwrap();
         assert_eq!(json_expected, json);
     }
-}
-
-// For serde skipping - if boolean false
-fn _is_false(b: &bool) -> bool {
-    !b
-}
-
-// For serde skipping - if boolean true
-fn _is_true(b: &bool) -> bool {
-    *b
-}
-
-// For serde (default boolean - true)
-const fn _default_true() -> bool {
-    true
 }
