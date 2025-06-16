@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct NFC {
     /// (Required) The public encryption key the Value Added Services protocol uses.
     ///
-    /// Use a Base64-encoded X.509 SubjectPublicKeyInfo structure that contains an ECDH public key for group P256.
+    /// Use a Base64-encoded X.509 `SubjectPublicKeyInfo` structure that contains an ECDH public key for group P256.
     pub encryption_public_key: String,
 
     /// (Required) The payload the device transmits to the Apple Pay terminal.
@@ -48,7 +48,7 @@ mod tests {
 
         let json = serde_json::to_string_pretty(&nfc).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "encryptionPublicKey": "ABCDEFG_0011223344556677889900",

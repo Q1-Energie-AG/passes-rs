@@ -1,4 +1,4 @@
-//! Rust library for generate Apple Wallet Passes for iOS, WatchOS, MacOS.
+//! Rust library for generate Apple Wallet Passes for `iOS`, `WatchOS`, `MacOS`.
 //!
 //! # Quick start
 //! [Pass] represent the displayable fields (pass.json), [Package]
@@ -34,7 +34,7 @@
 //!     .unwrap();
 //!  ```
 //!
-//! Then you can add certificates for sign pass package. Signing is required for iOS, MacOS and other Apple stuff.
+//! Then you can add certificates for sign pass package. Signing is required for `iOS`, `MacOS` and other Apple stuff.
 //!
 //! ```rust,ignore
 //! let mut file_sign_cert = File::open(&Path::new("certs/signerCert.pem"));

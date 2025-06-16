@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     io::{Read, Write},
     str::FromStr,
 };
@@ -17,24 +18,28 @@ pub struct Resource {
 
 impl Resource {
     /// Create new empty resource
+    #[must_use]
     pub fn new(image_type: Type) -> Self {
         Self {
             image_type,
-            buffer: vec![],
+            buffer: Vec::new(),
         }
     }
 
     /// Get resource data
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         self.buffer.as_slice()
     }
 
     // Get resource file name
+    #[must_use]
     pub fn filename(&self) -> String {
         self.image_type.to_string()
     }
 
     /// Get resource type
+    #[must_use]
     pub fn get_type(&self) -> Type {
         self.image_type.clone()
     }
@@ -67,13 +72,14 @@ pub enum Version {
 }
 
 // To String
-impl ToString for Version {
-    fn to_string(&self) -> String {
-        match self {
-            Version::Standard => "".into(),
-            Version::Size2X => "@2x".into(),
-            Version::Size3X => "@3x".into(),
-        }
+impl Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Version::Standard => "",
+            Version::Size2X => "@2x",
+            Version::Size3X => "@3x",
+        };
+        write!(f, "{str}")
     }
 }
 
@@ -117,15 +123,15 @@ pub enum Type {
     Thumbnail(Version),
 }
 
-impl ToString for Type {
-    fn to_string(&self) -> String {
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Background(v) => format!("background{}.png", v.to_string()),
-            Type::Footer(v) => format!("footer{}.png", v.to_string()),
-            Type::Icon(v) => format!("icon{}.png", v.to_string()),
-            Type::Logo(v) => format!("logo{}.png", v.to_string()),
-            Type::Strip(v) => format!("strip{}.png", v.to_string()),
-            Type::Thumbnail(v) => format!("thumbnail{}.png", v.to_string()),
+            Type::Background(v) => write!(f, "background{v}.png"),
+            Type::Footer(v) => write!(f, "footer{v}.png"),
+            Type::Icon(v) => write!(f, "icon{v}.png"),
+            Type::Logo(v) => write!(f, "logo{v}.png"),
+            Type::Strip(v) => write!(f, "strip{v}.png"),
+            Type::Thumbnail(v) => write!(f, "thumbnail{v}.png"),
         }
     }
 }
@@ -136,7 +142,7 @@ impl FromStr for Type {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Note: format field unused
         let re = Regex::new(r"(?P<type>\w+)(?P<version>@\dx)?\.(?P<format>png)").unwrap();
-        let captures = re.captures(&s);
+        let captures = re.captures(s);
 
         // Extract captures
         if let Some(captures) = captures {
@@ -150,19 +156,15 @@ impl FromStr for Type {
                 Version::Standard
             };
 
-            if let Ok(image_type_str) = captures["type"].parse::<String>() {
-                // Match type & version
-                match image_type_str.as_str() {
-                    "background" => Ok(Type::Background(version)),
-                    "footer" => Ok(Type::Footer(version)),
-                    "icon" => Ok(Type::Icon(version)),
-                    "logo" => Ok(Type::Logo(version)),
-                    "strip" => Ok(Type::Strip(version)),
-                    "thumbnail" => Ok(Type::Thumbnail(version)),
-                    _ => Err(()),
-                }
-            } else {
-                Err(())
+            // Match type & version
+            match &captures["type"] {
+                "background" => Ok(Type::Background(version)),
+                "footer" => Ok(Type::Footer(version)),
+                "icon" => Ok(Type::Icon(version)),
+                "logo" => Ok(Type::Logo(version)),
+                "strip" => Ok(Type::Strip(version)),
+                "thumbnail" => Ok(Type::Thumbnail(version)),
+                _ => Err(()),
             }
         } else {
             Err(())
@@ -176,9 +178,9 @@ mod tests {
 
     #[test]
     fn create_resource() {
-        let mut data = [0u8; 2048];
+        let data = [0u8; 2048];
         let mut resource = Resource::new(Type::Icon(Version::Standard));
-        resource.write(&mut data).unwrap();
+        resource.write_all(&data).unwrap();
 
         println!("{}", resource.buffer.len());
 

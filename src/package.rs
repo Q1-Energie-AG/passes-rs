@@ -90,6 +90,8 @@ impl Package {
     /// Write compressed package.
     ///
     /// Use for creating .pkpass file
+    /// # Errors
+    /// Returns an error if writing fails
     pub fn write<W: Write + Seek>(&mut self, writer: W) -> Result<(), String> {
         let mut manifest = Manifest::new();
 

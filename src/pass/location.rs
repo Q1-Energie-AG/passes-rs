@@ -43,15 +43,15 @@ mod tests {
     fn make_location() {
         // Serialization test
         let location = Location {
-            latitude: 37.334606,
-            longitude: -122.009102,
+            latitude: 37.334_606,
+            longitude: -122.009_102,
             relevant_text: Some(String::from("Apple Park, Cupertino, CA, USA")),
             ..Default::default()
         };
 
         let json = serde_json::to_string_pretty(&location).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "latitude": 37.334606,

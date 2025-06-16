@@ -97,11 +97,12 @@ pub struct Content {
 
 impl Content {
     /// Creates `FieldContent`.
+    #[must_use]
     pub fn new(key: &str, value: &str, options: ContentOptions) -> Self {
         Self {
             key: String::from(key),
             value: ContentValue::from(value),
-            options: options,
+            options,
         }
     }
 }
@@ -217,7 +218,7 @@ impl Default for ContentOptions {
             number_style: None,
             text_alignment: None,
             time_style: None,
-            semantics: Default::default(),
+            semantics: SemanticTags::default(),
         }
     }
 }
@@ -333,6 +334,7 @@ pub enum TransitType {
 
 impl Type {
     /// Add field that display additional information on the front of a pass.
+    #[must_use]
     pub fn add_auxiliary_field(mut self, field: Content) -> Self {
         match self {
             Self::BoardingPass {
@@ -359,13 +361,14 @@ impl Type {
     }
 
     /// Add field that display information on the back of a pass.
+    #[must_use]
     pub fn add_back_field(mut self, field: Content) -> Self {
         match self {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields.back_fields.get_or_insert_default().push(field),
-            Self::Coupon {
+            }
+            | Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
@@ -382,16 +385,14 @@ impl Type {
     }
 
     /// Add field that display information at the top of a pass.
+    #[must_use]
     pub fn add_header_field(mut self, field: Content) -> Self {
         match self {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields
-                .header_fields
-                .get_or_insert_default()
-                .push(field),
-            Self::Coupon {
+            }
+            | Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
@@ -411,13 +412,14 @@ impl Type {
     }
 
     /// Add field that display the most important information on a pass.
+    #[must_use]
     pub fn add_primary_field(mut self, field: Content) -> Self {
         match self {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields.primary_fields.push(field),
-            Self::Coupon {
+            }
+            | Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
@@ -434,16 +436,14 @@ impl Type {
     }
 
     /// Add field that display supporting information on the front of a pass.
+    #[must_use]
     pub fn add_secondary_field(mut self, field: Content) -> Self {
         match self {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields
-                .secondary_fields
-                .get_or_insert_default()
-                .push(field),
-            Self::Coupon {
+            }
+            | Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
@@ -480,7 +480,7 @@ mod tests {
 
         let json = serde_json::to_string_pretty(&pass).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "generic": {
@@ -504,7 +504,11 @@ mod tests {
             },
             transit_type: TransitType::Air,
         }
-        .add_primary_field(Content::new("title", "Airplane Ticket", Default::default()))
+        .add_primary_field(Content::new(
+            "title",
+            "Airplane Ticket",
+            ContentOptions::default(),
+        ))
         .add_primary_field(Content::new(
             "seat",
             "12",
@@ -522,21 +526,21 @@ mod tests {
                 ..Default::default()
             },
         ))
-        .add_header_field(Content::new("company", "DAL", Default::default()))
+        .add_header_field(Content::new("company", "DAL", ContentOptions::default()))
         .add_header_field(Content::new(
             "company_sub",
             "Dodo Air Lines",
-            Default::default(),
+            ContentOptions::default(),
         ))
         .add_secondary_field(Content::new(
             "description",
             "Some information here",
-            Default::default(),
+            ContentOptions::default(),
         ));
 
         let json = serde_json::to_string_pretty(&boarding_pass).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "boardingPass": {
@@ -603,18 +607,22 @@ mod tests {
                 ..Default::default()
             },
         ))
-        .add_primary_field(Content::new("seat", "12", Default::default()))
-        .add_header_field(Content::new("event_title", "KKK", Default::default()))
-        .add_header_field(Content::new("some", "123", Default::default()))
+        .add_primary_field(Content::new("seat", "12", ContentOptions::default()))
+        .add_header_field(Content::new(
+            "event_title",
+            "KKK",
+            ContentOptions::default(),
+        ))
+        .add_header_field(Content::new("some", "123", ContentOptions::default()))
         .add_secondary_field(Content::new(
             "description",
             "Some information here",
-            Default::default(),
+            ContentOptions::default(),
         ));
 
         let json = serde_json::to_string_pretty(&event_ticket).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "eventTicket": {

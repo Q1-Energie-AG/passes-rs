@@ -54,7 +54,7 @@ mod tests {
 
         let json = serde_json::to_string_pretty(&beacon).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "proximityUUID": "e286373b-15b5-4f4e-bf91-e9e64787724a",

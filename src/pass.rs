@@ -499,7 +499,7 @@ mod tests {
 
         let json = pass.make_json().unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{"formatVersion":1,"organizationName":"Apple inc.","description":"Example pass","passTypeIdentifier":"com.example.pass","teamIdentifier":"AA00AA0A0A","serialNumber":"ABCDEFG1234567890","generic":{"primaryFields":[]}}"#;
 
@@ -512,6 +512,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn make_pass() {
         // Serialization test
         let pass = PassBuilder::new(PassConfig {
@@ -528,8 +529,8 @@ mod tests {
             background_color: Color::white(),
         })
         .logo_text(String::from("Test pass"))
-        .relevant_date(Utc.with_ymd_and_hms(2024, 02, 07, 0, 0, 0).unwrap())
-        .expiration_date(Utc.with_ymd_and_hms(2024, 02, 08, 0, 0, 0).unwrap())
+        .relevant_date(Utc.with_ymd_and_hms(2024, 2, 7, 0, 0, 0).unwrap())
+        .expiration_date(Utc.with_ymd_and_hms(2024, 2, 8, 0, 0, 0).unwrap())
         .app_launch_url(String::from("testapp:param?index=1"))
         .add_associated_store_identifier(100)
         .web_service(WebService {
@@ -552,8 +553,8 @@ mod tests {
             relevant_text: Some(String::from("The simple beacon")),
         })
         .add_location(Location {
-            latitude: 37.334606,
-            longitude: -122.009102,
+            latitude: 37.334_606,
+            longitude: -122.009_102,
             relevant_text: Some(String::from("Apple Park, Cupertino, CA, USA")),
             ..Default::default()
         })
@@ -566,8 +567,8 @@ mod tests {
         .semantics(SemanticTags {
             airline_code: String::from("EX123").into(),
             departure_location: SemanticTagLocation {
-                latitude: 43.3948533,
-                longitude: 132.1451673,
+                latitude: 43.394_853_3,
+                longitude: 132.145_167_3,
             }
             .into(),
             ..Default::default()
@@ -627,7 +628,7 @@ mod tests {
 
         let json = pass.make_json().unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{"formatVersion":1,"organizationName":"Apple inc.","description":"Example pass","passTypeIdentifier":"com.example.pass","teamIdentifier":"AA00AA0A0A","serialNumber":"ABCDEFG1234567890","groupingIdentifier":"com.example.pass.app","foregroundColor":"rgb(250, 10, 10)","backgroundColor":"rgb(255, 255, 255)","logoText":"Test pass","relevantDate":"2024-02-07T00:00:00+00:00","expirationDate":"2024-02-08T00:00:00+00:00","appLaunchURL":"testapp:param?index=1","associatedStoreIdentifiers":[100],"authenticationToken":"abcdefg01234567890abcdefg","webServiceURL":"https://example.com/passes/","suppressStripShine":false,"barcodes":[{"message":"Hello world!","format":"PKBarcodeFormatQR","altText":"test by test","messageEncoding":"iso-8859-1"}],"beacons":[{"proximityUUID":"e286373b-15b5-4f4e-bf91-e9e64787724a","major":2,"minor":150,"relevantText":"The simple beacon"}],"locations":[{"latitude":37.334606,"longitude":-122.009102,"relevantText":"Apple Park, Cupertino, CA, USA"}],"maxDistance":1000,"nfc":{"encryptionPublicKey":"ABCDEFG_0011223344556677889900","message":"test message","requiresAuthentication":false},"semantics":{"airlineCode":"EX123","departureLocation":{"latitude":43.3948533,"longitude":132.1451673}},"boardingPass":{"auxiliaryFields":[{"key":"date_departure","value":"20.02.2024","label":"Departure date"}],"headerFields":[{"key":"serial","value":"1122","label":"SERIAL"},{"key":"number","value":"0011223344","label":"NUMBER","textAlignment":"PKTextAlignmentRight"}],"primaryFields":[{"key":"from","value":"UHWW","label":"FROM","textAlignment":"PKTextAlignmentLeft"},{"key":"to","value":"RKSI","label":"TO","textAlignment":"PKTextAlignmentRight"}],"transitType":"PKTransitTypeAir"}}"#;
 

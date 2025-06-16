@@ -17,12 +17,13 @@ pub struct SignConfig {
 
 impl SignConfig {
     /// Create new config from buffers
-    pub fn new(wwdr: WWDR, sign_cert: &[u8], sign_key: &[u8]) -> Result<SignConfig, ErrorStack> {
-        let cert;
-        match wwdr {
-            WWDR::G4 => cert = X509::from_der(G4_CERT)?,
-            WWDR::Custom(buf) => cert = X509::from_pem(buf)?,
-        }
+    /// # Errors
+    /// Returns `ErrorStack` when the certs and keys cannot be loaded
+    pub fn new(wwdr: &WWDR, sign_cert: &[u8], sign_key: &[u8]) -> Result<SignConfig, ErrorStack> {
+        let cert = match wwdr {
+            WWDR::G4 => X509::from_der(G4_CERT)?,
+            WWDR::Custom(buf) => X509::from_pem(buf)?,
+        };
 
         let sign_cert = X509::from_pem(sign_cert)?;
 
@@ -37,7 +38,7 @@ impl SignConfig {
     }
 }
 
-/// G4 certificate from https://www.apple.com/certificateauthority/
+/// G4 certificate from <https://www.apple.com/certificateauthority/>
 const G4_CERT: &[u8; 1113] = include_bytes!("AppleWWDRCAG4.cer");
 
 /// Predefined certificate from Apple CA, or custom certificate
@@ -110,6 +111,6 @@ mod tests {
         let sign_cert = &sign_cert.to_pem().unwrap();
         let sign_key = &sign_key.private_key_to_pem_pkcs8().unwrap();
 
-        let _ = SignConfig::new(WWDR::G4, sign_cert, sign_key).unwrap();
+        let _ = SignConfig::new(&WWDR::G4, sign_cert, sign_key).unwrap();
     }
 }

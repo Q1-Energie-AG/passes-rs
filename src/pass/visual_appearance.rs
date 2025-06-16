@@ -49,16 +49,19 @@ pub struct Color {
 
 impl Color {
     /// Creates a new `Color`.
+    #[must_use]
     pub fn new(r: u8, g: u8, b: u8) -> Option<Self> {
         Some(Self { r, g, b })
     }
 
     /// Creates a white `Color`.
+    #[must_use]
     pub fn black() -> Option<Self> {
         Some(Self { r: 0, g: 0, b: 0 })
     }
 
     /// Creates a white `Color`.
+    #[must_use]
     pub fn white() -> Option<Self> {
         Some(Self {
             r: 255,
@@ -122,7 +125,7 @@ mod tests {
 
         let json = serde_json::to_string_pretty(&appearance).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "labelColor": "rgb(255, 100, 100)",
@@ -151,7 +154,7 @@ mod tests {
     fn make_black_color() {
         let color = Color::black().unwrap();
 
-        println!("{:?}", color);
+        println!("{color:?}");
 
         assert_eq!(0, color.r);
         assert_eq!(0, color.g);
@@ -162,7 +165,7 @@ mod tests {
     fn make_white_color() {
         let color = Color::white().unwrap();
 
-        println!("{:?}", color);
+        println!("{color:?}");
 
         assert_eq!(255, color.r);
         assert_eq!(255, color.g);

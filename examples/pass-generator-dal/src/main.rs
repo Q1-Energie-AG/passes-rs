@@ -13,6 +13,7 @@ use chrono::Duration;
 use std::fs::File;
 use std::path::Path;
 
+#[allow(clippy::too_many_lines, clippy::unreadable_literal)]
 fn main() {
     // Calculate time
     let time_to_departure = chrono::offset::Local::now().to_utc() + Duration::hours(4);
@@ -159,14 +160,14 @@ fn main() {
 
     // Display pass.json
     let json = pass.make_json().unwrap();
-    println!("pass.json: {}", json);
+    println!("pass.json: {json}");
 
     // Creating package
     let mut package = Package::new(pass);
 
     // Adding icon
     let image_path = Path::new("DAL_logo.png");
-    let file = match File::open(&image_path) {
+    let file = match File::open(image_path) {
         Err(why) => panic!("couldn't open {}: {}", image_path.display(), why),
         Ok(file) => file,
     };
@@ -176,7 +177,7 @@ fn main() {
 
     // Adding logo
     let image_path = Path::new("DAL_logo_text.png");
-    let file = match File::open(&image_path) {
+    let file = match File::open(image_path) {
         Err(why) => panic!("couldn't open {}: {}", image_path.display(), why),
         Ok(file) => file,
     };
@@ -190,7 +191,7 @@ fn main() {
 
     // Save package as .pkpass
     let path = Path::new("DAL-boardingpass.pkpass");
-    let file = match File::create(&path) {
+    let file = match File::create(path) {
         Err(why) => panic!("couldn't create {}: {}", path.display(), why),
         Ok(file) => file,
     };
@@ -200,7 +201,7 @@ fn main() {
 // Read cert & key and make SignConfig
 fn setup_sign_config(cert: &str, key: &str) -> SignConfig {
     let sign_cert_path = Path::new(cert);
-    let mut file_sign_cert = match File::open(&sign_cert_path) {
+    let mut file_sign_cert = match File::open(sign_cert_path) {
         Err(why) => panic!("couldn't open {}: {}", sign_cert_path.display(), why),
         Ok(file) => file,
     };
@@ -208,12 +209,12 @@ fn setup_sign_config(cert: &str, key: &str) -> SignConfig {
     std::io::Read::read_to_end(&mut file_sign_cert, &mut sign_cert_data).unwrap();
 
     let sign_cert_key_path = Path::new(key);
-    let mut file_sign_key_cert = match File::open(&sign_cert_key_path) {
+    let mut file_sign_key_cert = match File::open(sign_cert_key_path) {
         Err(why) => panic!("couldn't open {}: {}", sign_cert_key_path.display(), why),
         Ok(file) => file,
     };
     let mut sign_cert_key_data = Vec::new();
     std::io::Read::read_to_end(&mut file_sign_key_cert, &mut sign_cert_key_data).unwrap();
 
-    SignConfig::new(sign::WWDR::G4, &sign_cert_data, &sign_cert_key_data).unwrap()
+    SignConfig::new(&sign::WWDR::G4, &sign_cert_data, &sign_cert_key_data).unwrap()
 }

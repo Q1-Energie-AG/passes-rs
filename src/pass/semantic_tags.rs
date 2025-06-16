@@ -378,7 +378,7 @@ pub struct SemanticTags {
 
     /// A brief description of the current boarding status for the vessel, such as “On Time” or “Delayed”.
     ///
-    /// For delayed status, provide [current_boarding_date](SemanticTags::current_boarding_date), [current_departure_date](SemanticTags::current_arrival_date), and [current_arrival_date](SemanticTags::current_arrival_date) where available.
+    /// For delayed status, provide `current_boarding_date`(`SemanticTags::current_boarding_date`), `current_departure_date`(`SemanticTags::current_arrival_date`), and `current_arrival_date`(`SemanticTags::current_arrival_date`) where available.
     ///
     /// Use this key for any type of boarding pass.
     #[serde(default)]
@@ -446,7 +446,7 @@ pub struct SemanticTags {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub venue_room: Option<String>,
 
-    /// An array of objects that represent the WiFi networks associated with the event; for example, the network name and password associated with a developer conference.
+    /// An array of objects that represent the `WiFi` networks associated with the event; for example, the network name and password associated with a developer conference.
     ///
     /// Use this key for any type of pass.
     #[serde(default)]
@@ -595,14 +595,14 @@ impl Default for SemanticTagSeat {
     }
 }
 
-/// Contains information required to connect to a WiFi network.
+/// Contains information required to connect to a `WiFi` network.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SemanticTagWifiNetwork {
-    /// (Required) The password for the WiFi network.
+    /// (Required) The password for the `WiFi` network.
     pub password: f64,
 
-    /// (Required) The name for the WiFi network.
+    /// (Required) The name for the `WiFi` network.
     pub ssid: f64,
 }
 
@@ -708,6 +708,7 @@ mod tests {
 
     use super::*;
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn make_semantic_tags() {
         // Serialization test
@@ -730,15 +731,15 @@ mod tests {
             boarding_sequence_number: String::from("123").into(),
             car_number: String::from("01").into(),
             confirmation_number: String::from("1234").into(),
-            current_arrival_date: Utc.with_ymd_and_hms(2024, 02, 10, 0, 0, 0).unwrap().into(),
-            current_boarding_date: Utc.with_ymd_and_hms(2024, 02, 08, 0, 0, 0).unwrap().into(),
-            current_departure_date: Utc.with_ymd_and_hms(2024, 02, 09, 0, 0, 0).unwrap().into(),
+            current_arrival_date: Utc.with_ymd_and_hms(2024, 2, 10, 0, 0, 0).unwrap().into(),
+            current_boarding_date: Utc.with_ymd_and_hms(2024, 2, 8, 0, 0, 0).unwrap().into(),
+            current_departure_date: Utc.with_ymd_and_hms(2024, 2, 9, 0, 0, 0).unwrap().into(),
             departure_airport_code: String::from("VVO").into(),
             departure_airport_name: String::from("Vladivostok International Airport").into(),
             departure_gate: String::from("8").into(),
             departure_location: SemanticTagLocation {
-                latitude: 43.3948533,
-                longitude: 132.1451673,
+                latitude: 43.394_853_3,
+                longitude: 132.145_167_3,
             }
             .into(),
             departure_location_description: String::from(
@@ -752,8 +753,8 @@ mod tests {
             destination_airport_name: String::from("Incheon International Airport").into(),
             destination_gate: String::from("1B").into(),
             destination_location: SemanticTagLocation {
-                latitude: 37.4493342,
-                longitude: 126.4487646,
+                latitude: 37.449_334_2,
+                longitude: 126.448_764_6,
             }
             .into(),
             destination_location_description: String::from("Seoul airport with various recreational areas: spa, golf course and ice skating rink.").into(),
@@ -761,9 +762,9 @@ mod tests {
             destination_station_name: String::from("2st Street Station").into(),
             destination_terminal: String::from("B").into(),
             duration: Some(12345),
-            event_end_date: Utc.with_ymd_and_hms(2024, 02, 10, 0, 0, 0).unwrap().into(),
+            event_end_date: Utc.with_ymd_and_hms(2024, 2, 10, 0, 0, 0).unwrap().into(),
             event_name: String::from("Super cool movie").into(),
-            event_start_date: Utc.with_ymd_and_hms(2024, 02, 10, 8, 0, 0).unwrap().into(),
+            event_start_date: Utc.with_ymd_and_hms(2024, 2, 10, 8, 0, 0).unwrap().into(),
             event_type: SemanticEventType::Generic.into(),
             flight_code: String::from("EX123").into(),
             passenger_name: SemanticTagPersonNameComponents {
@@ -786,7 +787,7 @@ mod tests {
 
         let json = serde_json::to_string_pretty(&tags).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "airlineCode": "EX123",

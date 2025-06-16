@@ -11,10 +11,17 @@ pub struct Manifest {
     items: Vec<Item>,
 }
 
+impl Default for Manifest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Manifest {
     /// Create empty manifest
+    #[must_use]
     pub fn new() -> Self {
-        Self { items: vec![] }
+        Self { items: Vec::new() }
     }
 
     /// Add items & calculate SHA-256
@@ -24,22 +31,23 @@ impl Manifest {
         let checksum = hasher.finish();
         let item = Item {
             path: path.to_string(),
-            checksum: hex::encode(&checksum),
+            checksum: hex::encode(checksum),
         };
         self.items.push(item);
     }
 
     /// Add multiple items & calculate SHA-256
-    pub fn add_items(&mut self, items: Vec<(&str, &[u8])>) {
-        for (path, data) in items.iter() {
+    pub fn add_items(&mut self, items: &[(&str, &[u8])]) {
+        for (path, data) in items {
             self.add_item(path, data);
         }
     }
 
     /// Build JSON output for manifest (manifest.json)
+    /// # Errors
+    /// Returns a `serde_json` error if building the json fails
     pub fn make_json(&self) -> Result<String, serde_json::Error> {
-        let json = serde_json::to_string(&self)?;
-        Ok(json)
+        serde_json::to_string(&self)
     }
 
     /// Remove all items from Manifest
@@ -63,7 +71,7 @@ impl Serialize for Manifest {
         S: serde::Serializer,
     {
         let mut map = serializer.serialize_map(Some(self.items.len()))?;
-        for item in self.items.iter() {
+        for item in &self.items {
             map.serialize_entry(&item.path, &item.checksum)?;
         }
         map.end()
@@ -90,13 +98,14 @@ mod tests {
 
     #[test]
     fn make_manifest_multiple_items() {
-        let mut items = Vec::new();
-        items.push(("pass.json", "hello world".as_bytes()));
-        items.push(("logo.png", "PNG DATA 1".as_bytes()));
-        items.push(("background.png", "PNG DATA 2".as_bytes()));
+        let items = vec![
+            ("pass.json", "hello world".as_bytes()),
+            ("logo.png", "PNG DATA 1".as_bytes()),
+            ("background.png", "PNG DATA 2".as_bytes()),
+        ];
 
         let mut manifest = Manifest::new();
-        manifest.add_items(items);
+        manifest.add_items(&items);
 
         let json = manifest.make_json().unwrap();
         let json_expected = r#"{"pass.json":"2aae6c35c94fcfb415dbe95f408b9ce91ee846ed","logo.png":"e2507820ce1bd6d09669504e6a5536f7a3ccc94b","background.png":"05cc11980f5826d11c5c1292a4cd04ad11ddbf45"}"#;

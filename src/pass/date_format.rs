@@ -1,13 +1,14 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::{self, Deserialize, Deserializer, Serializer};
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 
 /// Serialization to custom date format
+#[allow(clippy::ref_option)]
 pub fn serialize<S>(date: &Option<DateTime<Utc>>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let s = format!("{}", date.unwrap().to_rfc3339());
-    serializer.serialize_str(&s)
+    let s = date.map(|d| d.to_rfc3339());
+    Option::<String>::serialize(&s, serializer)
 }
 
 /// Deserialization from custom date format
@@ -47,10 +48,10 @@ mod tests {
     #[test]
     fn serialize_check() {
         let date_struct = DateTest {
-            date: Some(Utc.with_ymd_and_hms(2024, 02, 07, 10, 15, 0).unwrap()),
+            date: Some(Utc.with_ymd_and_hms(2024, 2, 7, 10, 15, 0).unwrap()),
         };
         let json = serde_json::to_string_pretty(&date_struct).unwrap();
-        println!("{}", json);
+        println!("{json}");
         let json_expected = r#"{
   "date": "2024-02-07T10:15:00+00:00"
 }"#;
@@ -63,7 +64,7 @@ mod tests {
   "date": "2024-02-07T10:15:00+00:00"
 }"#;
         let date_struct: DateTest = serde_json::from_str(json).unwrap();
-        let date_expected = Utc.with_ymd_and_hms(2024, 02, 07, 10, 15, 0).unwrap();
+        let date_expected = Utc.with_ymd_and_hms(2024, 2, 7, 10, 15, 0).unwrap();
         assert_eq!(date_expected, date_struct.date.unwrap());
     }
 
@@ -73,7 +74,7 @@ mod tests {
   "date": "Wed, 07 Feb 2024 10:15:00 GMT"
 }"#;
         let date_struct: DateTest = serde_json::from_str(json).unwrap();
-        let date_expected = Utc.with_ymd_and_hms(2024, 02, 07, 10, 15, 0).unwrap();
+        let date_expected = Utc.with_ymd_and_hms(2024, 2, 7, 10, 15, 0).unwrap();
         assert_eq!(date_expected, date_struct.date.unwrap());
     }
 
@@ -83,7 +84,7 @@ mod tests {
       "date": "2024-02-07T10:15:00"
     }"#;
         let date_struct: DateTest = serde_json::from_str(json).unwrap();
-        let date_expected = Utc.with_ymd_and_hms(2024, 02, 07, 10, 15, 0).unwrap();
+        let date_expected = Utc.with_ymd_and_hms(2024, 2, 7, 10, 15, 0).unwrap();
         assert_eq!(date_expected, date_struct.date.unwrap());
     }
 }

@@ -9,7 +9,7 @@ pub struct Barcode {
 
     /// (Required) The format of the barcode.
     ///
-    /// The barcode format PKBarcodeFormatCode128 isn’t supported for watchOS.
+    /// The barcode format `PKBarcodeFormatCode128` isn’t supported for watchOS.
     pub format: BarcodeFormat,
 
     /// The text to display near the barcode.
@@ -70,7 +70,7 @@ mod tests {
 
         let json = serde_json::to_string_pretty(&barcode).unwrap();
 
-        println!("{}", json);
+        println!("{json}");
 
         let json_expected = r#"{
   "message": "Hello world!",
