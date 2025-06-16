@@ -3,6 +3,8 @@ use std::{
     str::FromStr,
 };
 
+use openssl::stack::Stack;
+
 use crate::pass::Pass;
 
 use self::{manifest::Manifest, resource::Resource, sign::SignConfig};
@@ -88,7 +90,7 @@ impl Package {
     /// Write compressed package.
     ///
     /// Use for creating .pkpass file
-    pub fn write<W: Write + Seek>(&mut self, writer: W) -> Result<(), &'static str> {
+    pub fn write<W: Write + Seek>(&mut self, writer: W) -> Result<(), String> {
         let mut manifest = Manifest::new();
 
         let mut zip = zip::ZipWriter::new(writer);
@@ -109,7 +111,7 @@ impl Package {
         // Adding each resource files to zip
         for resource in &self.resources {
             zip.start_file(resource.filename(), options)
-                .map_err(|_| "Error while creating resource file in zip")?;
+                .map_err(|err| format!("Error while creating resource file in zip: {err:?}"))?;
             zip.write_all(resource.as_bytes())
                 .map_err(|_| "Error while writing resource file in zip")?;
             manifest.add_item(resource.filename().as_str(), resource.as_bytes());
@@ -127,11 +129,8 @@ impl Package {
 
         // If SignConfig is provided, make signature
         if let Some(sign_config) = &self.sign_config {
-            // Make signature without signing content
-            let flags = openssl::pkcs7::Pkcs7Flags::DETACHED;
             // Add WWDR cert to chain
-            let mut certs =
-                openssl::stack::Stack::new().map_err(|_| "Error while prepare certificate")?;
+            let mut certs = Stack::new().map_err(|_| "Error while prepare certificate")?;
             certs
                 .push(sign_config.cert.clone())
                 .map_err(|_| "Error while prepare certificate")?;
@@ -142,7 +141,7 @@ impl Package {
                 &sign_config.sign_key,
                 &certs,
                 manifest_json.as_bytes(),
-                flags,
+                openssl::pkcs7::Pkcs7Flags::BINARY | openssl::pkcs7::Pkcs7Flags::DETACHED,
             )
             .map_err(|_| "Error while signing package")?;
 

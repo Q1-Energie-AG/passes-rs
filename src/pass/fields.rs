@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use is_empty::IsEmpty;
 use serde::{Deserialize, Serialize};
 
@@ -8,31 +9,74 @@ use super::semantic_tags::SemanticTags;
 #[serde(rename_all = "camelCase")]
 pub struct Fields {
     /// Represents the fields that display additional information on the front of a pass.
-    pub auxiliary_fields: Vec<Content>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auxiliary_fields: Option<Vec<Content>>,
 
     /// Represents the fields that display information on the back of a pass.
-    pub back_fields: Vec<Content>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub back_fields: Option<Vec<Content>>,
 
     /// Represents the fields that display information at the top of a pass.
-    pub header_fields: Vec<Content>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub header_fields: Option<Vec<Content>>,
 
     /// Represents the fields that display the most important information on a pass.
     pub primary_fields: Vec<Content>,
 
     /// Represents the fields that display supporting information on the front of a pass.
-    pub secondary_fields: Vec<Content>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub secondary_fields: Option<Vec<Content>>,
 }
 
 impl Default for Fields {
     /// Creates an empty `Fields`.
     fn default() -> Self {
         Self {
-            auxiliary_fields: Vec::new(),
-            back_fields: Vec::new(),
-            header_fields: Vec::new(),
+            auxiliary_fields: None,
+            back_fields: None,
+            header_fields: None,
             primary_fields: Vec::new(),
-            secondary_fields: Vec::new(),
+            secondary_fields: None,
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ContentValue {
+    String(String),
+    Date(NaiveDateTime),
+    Int(i64),
+    Float(f64),
+}
+
+impl From<String> for ContentValue {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<&str> for ContentValue {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_string())
+    }
+}
+
+impl From<NaiveDateTime> for ContentValue {
+    fn from(value: NaiveDateTime) -> Self {
+        Self::Date(value)
+    }
+}
+
+impl From<i64> for ContentValue {
+    fn from(value: i64) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<f64> for ContentValue {
+    fn from(value: f64) -> Self {
+        Self::Float(value)
     }
 }
 
@@ -44,7 +88,7 @@ pub struct Content {
     pub key: String,
 
     /// (Required) The value to use for the field; for example, 42. A date or time value must include a time zone.
-    pub value: String,
+    pub value: ContentValue,
 
     /// All optionals
     #[serde(flatten)]
@@ -56,7 +100,7 @@ impl Content {
     pub fn new(key: &str, value: &str, options: ContentOptions) -> Self {
         Self {
             key: String::from(key),
-            value: String::from(value),
+            value: ContentValue::from(value),
             options: options,
         }
     }
@@ -258,6 +302,12 @@ pub enum Type {
         #[serde(flatten)]
         pass_fields: Fields,
     },
+    /// Represents the groups of fields that display the information for an event ticket.
+    StoreCard {
+        /// Groups of fields that display information on the front and back of a pass.
+        #[serde(flatten)]
+        pass_fields: Fields,
+    },
     /// Represents the groups of fields that display the information for a generic pass.
     Generic {
         /// Groups of fields that display information on the front and back of a pass.
@@ -288,16 +338,22 @@ impl Type {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields.auxiliary_fields.push(field),
-            Self::Coupon {
+            }
+            | Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
                 ref mut pass_fields,
             }
+            | Self::StoreCard {
+                ref mut pass_fields,
+            }
             | Self::Generic {
                 ref mut pass_fields,
-            } => pass_fields.auxiliary_fields.push(field),
+            } => pass_fields
+                .auxiliary_fields
+                .get_or_insert_default()
+                .push(field),
         }
         self
     }
@@ -308,16 +364,19 @@ impl Type {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields.back_fields.push(field),
+            } => pass_fields.back_fields.get_or_insert_default().push(field),
             Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
                 ref mut pass_fields,
             }
+            | Self::StoreCard {
+                ref mut pass_fields,
+            }
             | Self::Generic {
                 ref mut pass_fields,
-            } => pass_fields.back_fields.push(field),
+            } => pass_fields.back_fields.get_or_insert_default().push(field),
         }
         self
     }
@@ -328,16 +387,25 @@ impl Type {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields.header_fields.push(field),
+            } => pass_fields
+                .header_fields
+                .get_or_insert_default()
+                .push(field),
             Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
                 ref mut pass_fields,
             }
+            | Self::StoreCard {
+                ref mut pass_fields,
+            }
             | Self::Generic {
                 ref mut pass_fields,
-            } => pass_fields.header_fields.push(field),
+            } => pass_fields
+                .header_fields
+                .get_or_insert_default()
+                .push(field),
         }
         self
     }
@@ -355,6 +423,9 @@ impl Type {
             | Self::EventTicket {
                 ref mut pass_fields,
             }
+            | Self::StoreCard {
+                ref mut pass_fields,
+            }
             | Self::Generic {
                 ref mut pass_fields,
             } => pass_fields.primary_fields.push(field),
@@ -368,16 +439,25 @@ impl Type {
             Self::BoardingPass {
                 ref mut pass_fields,
                 transit_type: _,
-            } => pass_fields.secondary_fields.push(field),
+            } => pass_fields
+                .secondary_fields
+                .get_or_insert_default()
+                .push(field),
             Self::Coupon {
                 ref mut pass_fields,
             }
             | Self::EventTicket {
                 ref mut pass_fields,
             }
+            | Self::StoreCard {
+                ref mut pass_fields,
+            }
             | Self::Generic {
                 ref mut pass_fields,
-            } => pass_fields.secondary_fields.push(field),
+            } => pass_fields
+                .secondary_fields
+                .get_or_insert_default()
+                .push(field),
         }
         self
     }
@@ -404,11 +484,7 @@ mod tests {
 
         let json_expected = r#"{
   "generic": {
-    "auxiliaryFields": [],
-    "backFields": [],
-    "headerFields": [],
-    "primaryFields": [],
-    "secondaryFields": []
+    "primaryFields": []
   }
 }"#;
         assert_eq!(json_expected, json);
@@ -464,8 +540,6 @@ mod tests {
 
         let json_expected = r#"{
   "boardingPass": {
-    "auxiliaryFields": [],
-    "backFields": [],
     "headerFields": [
       {
         "key": "company",
@@ -544,8 +618,6 @@ mod tests {
 
         let json_expected = r#"{
   "eventTicket": {
-    "auxiliaryFields": [],
-    "backFields": [],
     "headerFields": [
       {
         "key": "event_title",
