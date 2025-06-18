@@ -464,11 +464,13 @@ impl PassBuilder {
 }
 
 // For serde skipping - if boolean false
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn _is_false(b: &bool) -> bool {
     !b
 }
 
 // For serde skipping - if boolean true
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn _is_true(b: &bool) -> bool {
     *b
 }
