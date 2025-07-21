@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use is_empty::IsEmpty;
 use serde::{Deserialize, Serialize};
 
@@ -45,7 +45,7 @@ impl Default for Fields {
 #[serde(untagged)]
 pub enum ContentValue {
     String(String),
-    Date(NaiveDateTime),
+    Date(DateTime<Utc>),
     Int(i64),
     Float(f64),
 }
@@ -62,8 +62,8 @@ impl From<&str> for ContentValue {
     }
 }
 
-impl From<NaiveDateTime> for ContentValue {
-    fn from(value: NaiveDateTime) -> Self {
+impl From<DateTime<Utc>> for ContentValue {
+    fn from(value: DateTime<Utc>) -> Self {
         Self::Date(value)
     }
 }

@@ -106,6 +106,8 @@ impl Package {
             .pass
             .make_json()
             .map_err(|_| "Error while building pass.json")?;
+
+        println!("{pass_json:?}");
         zip.write_all(pass_json.as_bytes())
             .map_err(|_| "Error while writing pass.json in zip")?;
         manifest.add_item("pass.json", pass_json.as_bytes());
