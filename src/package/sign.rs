@@ -9,6 +9,7 @@ use openssl::{
 ///
 /// Contains WWDR (Apple Worldwide Developer Relations), Signer Certificate (Developer), Signer Certificate Key (Developer)
 /// certificate for pass signing with private key
+#[derive(Debug)]
 pub struct SignConfig {
     pub cert: X509,
     pub sign_cert: X509,

@@ -1,9 +1,36 @@
 use std::{
     io::{Read, Seek, Write},
     str::FromStr,
+    time::SystemTime,
 };
 
+use cms::{
+    attr::SigningTime,
+    builder::{SignedDataBuilder, SignerInfoBuilder},
+    cert::{
+        x509::{
+            attr::Attribute,
+            der::{Any, Decode},
+            spki::ObjectIdentifier,
+        },
+        CertificateChoices, IssuerAndSerialNumber,
+    },
+    signed_data::{EncapsulatedContentInfo, SignedData, SignerIdentifier},
+};
 use openssl::stack::Stack;
+use rsa::{
+    pkcs1::der::referenced::RefToOwned,
+    pkcs8::der::{
+        asn1::{SetOfVec, UtcTime},
+        Encode, Tagged,
+    },
+};
+use rsa::{
+    pkcs1v15::SigningKey,
+    pkcs8::{spki::AssociatedAlgorithmIdentifier, DecodePrivateKey},
+};
+use sha1::Digest;
+use sha2::Sha256;
 
 use crate::pass::Pass;
 
@@ -14,6 +41,7 @@ pub mod resource;
 pub mod sign;
 
 /// Pass Package, contains information about pass.json, images, manifest.json and signature.
+#[derive(Debug)]
 pub struct Package {
     /// Represents pass.json
     pub pass: Pass,
@@ -107,7 +135,6 @@ impl Package {
             .make_json()
             .map_err(|_| "Error while building pass.json")?;
 
-        println!("{pass_json:?}");
         zip.write_all(pass_json.as_bytes())
             .map_err(|_| "Error while writing pass.json in zip")?;
         manifest.add_item("pass.json", pass_json.as_bytes());
@@ -139,20 +166,94 @@ impl Package {
                 .push(sign_config.cert.clone())
                 .map_err(|_| "Error while prepare certificate")?;
 
-            // Signing
-            let pkcs7 = openssl::pkcs7::Pkcs7::sign(
-                &sign_config.sign_cert,
-                &sign_config.sign_key,
-                &certs,
-                manifest_json.as_bytes(),
-                openssl::pkcs7::Pkcs7Flags::BINARY | openssl::pkcs7::Pkcs7Flags::DETACHED,
+            let eci = EncapsulatedContentInfo {
+                econtent: None,
+                econtent_type: ObjectIdentifier::new_unwrap("1.2.840.113549.1.7.1"),
+            };
+
+            let rsa = rsa::RsaPrivateKey::from_pkcs8_der(
+                &sign_config.sign_key.private_key_to_pkcs8().unwrap(),
             )
-            .map_err(|_| "Error while signing package")?;
+            .unwrap();
+
+            let signing_key: SigningKey<Sha256> = rsa::pkcs1v15::SigningKey::new_unprefixed(rsa);
+
+            let cert = cms::cert::x509::Certificate::from_der(&sign_config.cert.to_der().unwrap())
+                .unwrap();
+            let sign_cert =
+                cms::cert::x509::Certificate::from_der(&sign_config.sign_cert.to_der().unwrap())
+                    .unwrap();
+            let ius = IssuerAndSerialNumber {
+                issuer: sign_cert.clone().tbs_certificate.issuer,
+                serial_number: sign_cert.clone().tbs_certificate.serial_number,
+            };
+            let sid = SignerIdentifier::IssuerAndSerialNumber(ius);
+            // let digest_algorithm = Dig;
+            let encapsulated_content_info = EncapsulatedContentInfo {
+                econtent: None,
+                econtent_type: ObjectIdentifier::new_unwrap("1.2.840.113549.1.7.1"),
+            };
+            let digest_algorithm =
+                rsa::pkcs1v15::SigningKey::<Sha256>::ALGORITHM_IDENTIFIER.ref_to_owned();
+
+            let mut sha256 = sha2::Sha256::new();
+            sha256.update(manifest_json.as_bytes());
+            let digest = sha256.finalize();
+
+            println!("Digest len: {}", digest.len());
+            let external_message_digest = Some(digest);
+            let time = SigningTime::UtcTime(UtcTime::from_system_time(SystemTime::now()).unwrap());
+            let mut time_values: SetOfVec<Any> = SetOfVec::new();
+            time_values.insert(Any::new(time.tag(), time.to_der().unwrap()).unwrap());
+
+            let mut signer_info_builder = SignerInfoBuilder::new(
+                &signing_key,
+                sid,
+                digest_algorithm,
+                &encapsulated_content_info,
+                external_message_digest.as_deref(),
+            )
+            .unwrap();
+            signer_info_builder
+                .add_signed_attribute(Attribute {
+                    oid: ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.5"),
+                    values: time_values,
+                })
+                .unwrap();
+            // let time_attr = cms::builder::create_signing_time_attribute().unwrap();
+            let content_info2 = SignedDataBuilder::new(&eci)
+                .add_certificate(CertificateChoices::Certificate(cert.clone()))
+                .unwrap()
+                .add_certificate(CertificateChoices::Certificate(sign_cert.clone()))
+                .unwrap()
+                .add_signer_info(signer_info_builder)
+                .unwrap()
+                .build()
+                .unwrap();
+
+            // Signing
+            // let pkcs7 = openssl::pkcs7::Pkcs7::sign(
+            //     &sign_config.sign_cert,
+            //     &sign_config.sign_key,
+            //     &certs,
+            //     manifest_json.as_bytes(),
+            //     openssl::pkcs7::Pkcs7Flags::BINARY | openssl::pkcs7::Pkcs7Flags::DETACHED,
+            // )
+            // .map_err(|_| "Error while signing package")?;
 
             // Generate signature
-            let signature_data = pkcs7
-                .to_der()
-                .map_err(|_| "Error while generating signature")?;
+            // let signature_data = pkcs7
+            // .to_der()
+            // .map_err(|_| "Error while generating signature")?;
+
+            // let signed_data = cms::signed_data::SignedData::from_der(&signature_data);
+            // let content_info = ContentInfo::from_der(&signature_data).unwrap();
+            let signed_data = content_info2.content.decode_as::<SignedData>().unwrap();
+            // let signed_data2 = content_info2.content.decode_as::<SignedData>().unwrap();
+
+            println!("{:?}", signed_data);
+            let signature_data = content_info2.to_der().unwrap();
+            // let signature_data = signed_data2.to_der().unwrap();
 
             // Adding signature to zip
             zip.start_file("signature", options)

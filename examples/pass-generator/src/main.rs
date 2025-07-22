@@ -19,7 +19,6 @@ fn main() {
 
     // Display pass.json
     let json = pass.make_json().unwrap();
-    println!("pass.json: {json}");
 
     // Creating package
     let mut package = Package::new(pass);
