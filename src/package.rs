@@ -3,7 +3,10 @@ use std::{
     str::FromStr,
 };
 
-use openssl::stack::Stack;
+use openssl::{
+    cms::{CMSOptions, CmsContentInfo},
+    stack::Stack,
+};
 
 use crate::pass::Pass;
 
@@ -140,17 +143,17 @@ impl Package {
                 .map_err(|_| "Error while prepare certificate")?;
 
             // Signing
-            let pkcs7 = openssl::pkcs7::Pkcs7::sign(
-                &sign_config.sign_cert,
-                &sign_config.sign_key,
-                &certs,
-                manifest_json.as_bytes(),
-                openssl::pkcs7::Pkcs7Flags::BINARY | openssl::pkcs7::Pkcs7Flags::DETACHED,
+            let cms = CmsContentInfo::sign(
+                Some(&sign_config.sign_cert),
+                Some(&sign_config.sign_key),
+                Some(&certs),
+                Some(manifest_json.as_bytes()),
+                CMSOptions::BINARY | CMSOptions::DETACHED,
             )
             .map_err(|_| "Error while signing package")?;
 
             // Generate signature
-            let signature_data = pkcs7
+            let signature_data = cms
                 .to_der()
                 .map_err(|_| "Error while generating signature")?;
 
