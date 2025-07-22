@@ -159,7 +159,7 @@ fn main() {
     .build();
 
     // Display pass.json
-    let json = pass.make_json().unwrap();
+    let json = pass.to_json().unwrap();
     println!("pass.json: {json}");
 
     // Creating package

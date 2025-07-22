@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use is_empty::IsEmpty;
 use serde::{Deserialize, Serialize};
 
+use crate::error::PassError;
+
 use self::barcode::Barcode;
 use self::beacon::Beacon;
 use self::location::Location;
@@ -200,19 +202,19 @@ impl Pass {
     /// })
     /// .build();
     ///
-    /// let json = pass.make_json().unwrap();
+    /// let json = pass.to_json().unwrap();
     /// ```
     /// # Errors
     /// Returns a `serde_json` error if encoding fails
-    pub fn make_json(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string(&self)
+    pub fn to_json(&self) -> Result<String, PassError> {
+        serde_json::to_string(&self).map_err(PassError::Json)
     }
 
     /// Build pass (pass.json) from json data
     /// # Errors
     /// Returns a `serde_json` error if decoding fails
-    pub fn from_json(data: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(data)
+    pub fn from_json(data: &str) -> Result<Self, PassError> {
+        serde_json::from_str(data).map_err(PassError::Json)
     }
 }
 
@@ -499,7 +501,7 @@ mod tests {
         })
         .build();
 
-        let json = pass.make_json().unwrap();
+        let json = pass.to_json().unwrap();
 
         println!("{json}");
 
@@ -509,7 +511,7 @@ mod tests {
 
         // Deserialization test
         let pass: Pass = Pass::from_json(json_expected).unwrap();
-        let json = pass.make_json().unwrap();
+        let json = pass.to_json().unwrap();
         assert_eq!(json_expected, json);
     }
 
@@ -628,7 +630,7 @@ mod tests {
         )
         .build();
 
-        let json = pass.make_json().unwrap();
+        let json = pass.to_json().unwrap();
 
         println!("{json}");
 
@@ -638,7 +640,7 @@ mod tests {
 
         // Deserialization test
         let pass: Pass = Pass::from_json(json_expected).unwrap();
-        let json = pass.make_json().unwrap();
+        let json = pass.to_json().unwrap();
         assert_eq!(json_expected, json);
     }
 }
