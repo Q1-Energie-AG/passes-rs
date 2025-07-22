@@ -1,29 +1,22 @@
-use std::{
-    io::{Read, Seek, Write},
-    str::FromStr,
-};
+use std::io::Read;
 
-use openssl::{
-    cms::{CMSOptions, CmsContentInfo},
-    stack::Stack,
-};
-
-use crate::pass::Pass;
-
-use self::{manifest::Manifest, resource::Resource, sign::SignConfig};
+use self::{resource::Resource, sign::SignConfig};
+use crate::{error::PassError, Pass};
 
 pub mod manifest;
+pub(super) mod pass_writer;
+pub mod read;
 pub mod resource;
 pub mod sign;
+pub mod write;
 
 /// Pass Package, contains information about pass.json, images, manifest.json and signature.
+#[derive(Debug)]
 pub struct Package {
     /// Represents pass.json
     pub pass: Pass,
-
     /// Resources (image files)
     pub resources: Vec<Resource>,
-
     // Certificates for signing package
     pub sign_config: Option<SignConfig>,
 }
@@ -39,134 +32,9 @@ impl Package {
         }
     }
 
-    /// Read compressed package (.pkpass) from file.
-    ///
-    /// Use for creating .pkpass file from template.
-    /// # Errors
-    /// Returns an error if the pass cannot be read
-    pub fn read<R: Read + Seek>(reader: R) -> Result<Self, &'static str> {
-        // Read .pkpass as zip
-        let mut zip = zip::ZipArchive::new(reader).map_err(|_| "Error unzipping pkpass")?;
-
-        let mut pass: Option<Pass> = None;
-        let mut resources = Vec::<Resource>::new();
-
-        for i in 0..zip.len() {
-            // Get file name
-            let mut file = zip.by_index(i).map_err(|_| "Failed to get zip chunk")?;
-            let filename = file.name();
-            // Read pass.json file
-            if filename == "pass.json" {
-                let mut buf = String::new();
-                file.read_to_string(&mut buf)
-                    .map_err(|_| "failed to read file")?;
-                pass = Some(Pass::from_json(&buf).map_err(|_| "Error while parsing pass.json")?);
-                continue;
-            }
-            // Read resource files
-            if let Ok(t) = resource::Type::from_str(filename) {
-                let mut resource = Resource::new(t);
-                std::io::copy(&mut file, &mut resource)
-                    .map_err(|_| "Error while reading resource file")?;
-                resources.push(resource);
-            }
-            // Skip unknown files
-        }
-
-        // Check is pass.json successfully read
-        if let Some(pass) = pass {
-            Ok(Self {
-                pass,
-                resources,
-                sign_config: None,
-            })
-        } else {
-            Err("pass.json is missed in package file")
-        }
-    }
-
     /// Add certificates for signing package
     pub fn add_certificates(&mut self, config: SignConfig) {
         self.sign_config = Some(config);
-    }
-
-    /// Write compressed package.
-    ///
-    /// Use for creating .pkpass file
-    /// # Errors
-    /// Returns an error if writing fails
-    pub fn write<W: Write + Seek>(&mut self, writer: W) -> Result<(), String> {
-        let mut manifest = Manifest::new();
-
-        let mut zip = zip::ZipWriter::new(writer);
-        let options = zip::write::SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored);
-
-        // Adding pass.json to zip
-        zip.start_file("pass.json", options)
-            .map_err(|_| "Error while creating pass.json in zip")?;
-        let pass_json = self
-            .pass
-            .make_json()
-            .map_err(|_| "Error while building pass.json")?;
-
-        println!("{pass_json:?}");
-        zip.write_all(pass_json.as_bytes())
-            .map_err(|_| "Error while writing pass.json in zip")?;
-        manifest.add_item("pass.json", pass_json.as_bytes());
-
-        // Adding each resource files to zip
-        for resource in &self.resources {
-            zip.start_file(resource.filename(), options)
-                .map_err(|err| format!("Error while creating resource file in zip: {err:?}"))?;
-            zip.write_all(resource.as_bytes())
-                .map_err(|_| "Error while writing resource file in zip")?;
-            manifest.add_item(resource.filename().as_str(), resource.as_bytes());
-        }
-
-        // Adding manifest.json to zip
-        zip.start_file("manifest.json", options)
-            .map_err(|_| "Error while creating manifest.json in zip")?;
-        let manifest_json = manifest
-            .make_json()
-            .map_err(|_| "Error while generating manifest file")?;
-        zip.write_all(manifest_json.as_bytes())
-            .map_err(|_| "Error while writing manifest.json in zip")?;
-        manifest.add_item("manifest.json", manifest_json.as_bytes());
-
-        // If SignConfig is provided, make signature
-        if let Some(sign_config) = &self.sign_config {
-            // Add WWDR cert to chain
-            let mut certs = Stack::new().map_err(|_| "Error while prepare certificate")?;
-            certs
-                .push(sign_config.cert.clone())
-                .map_err(|_| "Error while prepare certificate")?;
-
-            // Signing
-            let cms = CmsContentInfo::sign(
-                Some(&sign_config.sign_cert),
-                Some(&sign_config.sign_key),
-                Some(&certs),
-                Some(manifest_json.as_bytes()),
-                CMSOptions::BINARY | CMSOptions::DETACHED,
-            )
-            .map_err(|_| "Error while signing package")?;
-
-            // Generate signature
-            let signature_data = cms
-                .to_der()
-                .map_err(|_| "Error while generating signature")?;
-
-            // Adding signature to zip
-            zip.start_file("signature", options)
-                .map_err(|_| "Error while creating signature in zip")?;
-            zip.write_all(&signature_data)
-                .map_err(|_| "Error while writing signature in zip")?;
-        }
-
-        zip.finish().map_err(|_| "Error while saving zip")?;
-
-        Ok(())
     }
 
     /// Adding image file to package.
@@ -178,9 +46,9 @@ impl Package {
         &mut self,
         image_type: resource::Type,
         mut reader: R,
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), PassError> {
         let mut resource = Resource::new(image_type);
-        std::io::copy(&mut reader, &mut resource).map_err(|_| "Error while reading resource")?;
+        std::io::copy(&mut reader, &mut resource)?;
         self.resources.push(resource);
         Ok(())
     }
@@ -188,11 +56,9 @@ impl Package {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Read;
-
-    use crate::pass::{PassBuilder, PassConfig};
-
     use super::*;
+    use crate::pass::{PassBuilder, PassConfig};
+    use std::io::Read;
 
     #[test]
     fn make_package() {
@@ -221,7 +87,7 @@ mod tests {
         .logo_text("Test pass".into())
         .build();
 
-        let expected_pass_json = pass.make_json().unwrap();
+        let expected_pass_json = pass.to_json().unwrap();
 
         let mut package = Package::new(pass);
 
@@ -260,7 +126,7 @@ mod tests {
         })
         .logo_text("Test pass".into())
         .build();
-        let expected_json = pass.make_json().unwrap();
+        let expected_json = pass.to_json().unwrap();
 
         // Create package with pass.json
         let mut package = Package::new(pass);
@@ -284,7 +150,7 @@ mod tests {
         let package_read = Package::read(reader).unwrap();
 
         // Check pass.json
-        let read_json = package_read.pass.make_json().unwrap();
+        let read_json = package_read.pass.to_json().unwrap();
         assert_eq!(expected_json, read_json);
 
         // Check assets

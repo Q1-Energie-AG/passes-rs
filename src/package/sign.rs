@@ -1,39 +1,42 @@
-use openssl::{
-    error::ErrorStack,
-    pkey::{PKey, Private},
-    rsa::Rsa,
-    x509::X509,
+use std::error::Error;
+
+use rsa::{pkcs8::DecodePrivateKey, RsaPrivateKey};
+use x509_cert::{
+    der::{Decode, DecodePem},
+    Certificate,
 };
 
 /// Configuration for package signing.
 ///
 /// Contains WWDR (Apple Worldwide Developer Relations), Signer Certificate (Developer), Signer Certificate Key (Developer)
 /// certificate for pass signing with private key
+#[derive(Debug)]
 pub struct SignConfig {
-    pub cert: X509,
-    pub sign_cert: X509,
-    pub sign_key: PKey<Private>,
+    pub sign_key: RsaPrivateKey,
+    pub cert: Certificate,
+    pub sign_cert: Certificate,
 }
 
 impl SignConfig {
     /// Create new config from buffers
     /// # Errors
     /// Returns `ErrorStack` when the certs and keys cannot be loaded
-    pub fn new(wwdr: &WWDR, sign_cert: &[u8], sign_key: &[u8]) -> Result<SignConfig, ErrorStack> {
+    pub fn new(
+        wwdr: &WWDR,
+        sign_cert: &[u8],
+        sign_key: &str,
+    ) -> Result<SignConfig, Box<dyn Error>> {
         let cert = match wwdr {
-            WWDR::G4 => X509::from_der(G4_CERT)?,
-            WWDR::Custom(buf) => X509::from_pem(buf)?,
+            WWDR::G4 => Certificate::from_der(G4_CERT)?,
+            WWDR::Custom(buf) => Certificate::from_pem(buf)?,
         };
-
-        let sign_cert = X509::from_pem(sign_cert)?;
-
-        let rsa = Rsa::private_key_from_pem(sign_key)?;
-        let sign_key = PKey::from_rsa(rsa)?;
+        let sign_cert = Certificate::from_pem(sign_cert)?;
+        let sign_key = RsaPrivateKey::from_pkcs8_pem(sign_key)?;
 
         Ok(SignConfig {
+            sign_key,
             cert,
             sign_cert,
-            sign_key,
         })
     }
 }
@@ -49,6 +52,13 @@ pub enum WWDR<'a> {
 
 #[cfg(test)]
 mod tests {
+    use openssl::{
+        error::ErrorStack,
+        pkey::{PKey, Private},
+        rsa::Rsa,
+        x509::X509,
+    };
+
     use super::*;
 
     /// Make x509 certificate and private key
@@ -110,7 +120,8 @@ mod tests {
 
         let sign_cert = &sign_cert.to_pem().unwrap();
         let sign_key = &sign_key.private_key_to_pem_pkcs8().unwrap();
+        let pem_str = std::str::from_utf8(sign_key).expect("PEM is not valid UTF-8");
 
-        let _ = SignConfig::new(&WWDR::G4, sign_cert, sign_key).unwrap();
+        let _ = SignConfig::new(&WWDR::G4, sign_cert, pem_str).unwrap();
     }
 }

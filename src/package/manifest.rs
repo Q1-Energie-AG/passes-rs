@@ -1,5 +1,6 @@
-use openssl::sha::Sha1;
 use serde::{ser::SerializeMap, Serialize};
+use sha1::Digest;
+use sha1::Sha1;
 
 /// Represents manifest.json file, contains SHA-256 of all .pkpass files.
 ///
@@ -24,19 +25,17 @@ impl Manifest {
         Self { items: Vec::new() }
     }
 
-    /// Add items & calculate SHA-256
+    /// Add items & calculate SHA-1
     pub fn add_item(&mut self, path: &str, data: &[u8]) {
-        let mut hasher = Sha1::new();
-        hasher.update(data);
-        let checksum = hasher.finish();
+        let checksum = Sha1::digest(data);
         let item = Item {
             path: path.to_string(),
-            checksum: hex::encode(checksum),
+            checksum: format!("{checksum:#x}"),
         };
         self.items.push(item);
     }
 
-    /// Add multiple items & calculate SHA-256
+    /// Add multiple items & calculate SHA-1
     pub fn add_items(&mut self, items: &[(&str, &[u8])]) {
         for (path, data) in items {
             self.add_item(path, data);

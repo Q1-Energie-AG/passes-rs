@@ -159,7 +159,7 @@ fn main() {
     .build();
 
     // Display pass.json
-    let json = pass.make_json().unwrap();
+    let json = pass.to_json().unwrap();
     println!("pass.json: {json}");
 
     // Creating package
@@ -213,8 +213,8 @@ fn setup_sign_config(cert: &str, key: &str) -> SignConfig {
         Err(why) => panic!("couldn't open {}: {}", sign_cert_key_path.display(), why),
         Ok(file) => file,
     };
-    let mut sign_cert_key_data = Vec::new();
-    std::io::Read::read_to_end(&mut file_sign_key_cert, &mut sign_cert_key_data).unwrap();
+    let mut sign_cert_key_data = String::new();
+    std::io::Read::read_to_string(&mut file_sign_key_cert, &mut sign_cert_key_data).unwrap();
 
     SignConfig::new(&sign::WWDR::G4, &sign_cert_data, &sign_cert_key_data).unwrap()
 }

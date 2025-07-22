@@ -17,10 +17,6 @@ fn main() {
     .logo_text("Test pass".into())
     .build();
 
-    // Display pass.json
-    let json = pass.make_json().unwrap();
-    println!("pass.json: {json}");
-
     // Creating package
     let mut package = Package::new(pass);
 
@@ -49,8 +45,8 @@ fn main() {
         Err(why) => panic!("couldn't open {}: {}", sign_cert_key_path.display(), why),
         Ok(file) => file,
     };
-    let mut sign_cert_key_data = Vec::new();
-    std::io::Read::read_to_end(&mut file_sign_key_cert, &mut sign_cert_key_data).unwrap();
+    let mut sign_cert_key_data = String::new();
+    std::io::Read::read_to_string(&mut file_sign_key_cert, &mut sign_cert_key_data).unwrap();
 
     let sign_config =
         sign::SignConfig::new(&sign::WWDR::G4, &sign_cert_data, &sign_cert_key_data).unwrap();
