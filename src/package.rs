@@ -181,7 +181,7 @@ impl Package {
             )
             .unwrap();
 
-            let signing_key: SigningKey<Sha256> = rsa::pkcs1v15::SigningKey::new_unprefixed(rsa);
+            let signing_key: SigningKey<Sha256> = rsa::pkcs1v15::SigningKey::new(rsa);
 
             let cert = cms::cert::x509::Certificate::from_der(&sign_config.cert.to_der().unwrap())
                 .unwrap();
@@ -198,12 +198,7 @@ impl Package {
                 econtent: None,
                 econtent_type: ObjectIdentifier::new_unwrap("1.2.840.113549.1.7.1"),
             };
-            let digest_algorithm =
-                rsa::pkcs1v15::SigningKey::<Sha256>::ALGORITHM_IDENTIFIER.ref_to_owned();
-
-            let mut sha256 = sha2::Sha256::new();
-            sha256.update(manifest_json.as_bytes());
-            let digest = sha256.finalize();
+            let hash = Sha256::digest(manifest_json.as_bytes());
             let time = SigningTime::UtcTime(UtcTime::from_system_time(SystemTime::now()).unwrap());
 
             const OID_SHA256: ObjectIdentifier =
@@ -214,8 +209,9 @@ impl Package {
                 parameters: Some(Any::null()),
             };
 
-            println!("Digest len: {}", digest.len());
-            let external_message_digest = Some(digest);
+            println!("{hash:#x}");
+
+            let external_message_digest = Some(hash);
             let mut time_values: SetOfVec<Any> = SetOfVec::new();
             time_values
                 // .insert(Any::new(time.tag(), time.to_der().unwrap()).unwrap())
