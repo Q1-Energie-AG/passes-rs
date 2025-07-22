@@ -61,6 +61,7 @@
 //!
 //! For more examples, see [example directory](https://github.com/mvodya/passes-rs/tree/main/examples) on GitHub.
 // Primary modules
+mod error;
 mod package;
 mod pass;
 
