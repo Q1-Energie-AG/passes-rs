@@ -56,7 +56,7 @@ let file = match File::create(&path) {
 package.write(file).unwrap();
 ```
 
-For more examples, see [examples](https://github.com/mvodya/passes-rs/tree/main/examples) directory.
+For more examples, see [examples](https://github.com/Q1-Energie-AG/passes-rs/tree/main/examples) directory.
 
 ## License
 
