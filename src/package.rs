@@ -206,6 +206,14 @@ impl Package {
             let digest = sha256.finalize();
             let time = SigningTime::UtcTime(UtcTime::from_system_time(SystemTime::now()).unwrap());
 
+            const OID_SHA256: ObjectIdentifier =
+                ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.1");
+
+            let alg_id = AlgorithmIdentifier::<Any> {
+                oid: OID_SHA256,
+                parameters: Some(Any::null()),
+            };
+
             println!("Digest len: {}", digest.len());
             let external_message_digest = Some(digest);
             let mut time_values: SetOfVec<Any> = SetOfVec::new();
@@ -217,7 +225,7 @@ impl Package {
             let mut signer_info_builder = SignerInfoBuilder::new(
                 &signing_key,
                 sid,
-                digest_algorithm,
+                alg_id.clone(),
                 &encapsulated_content_info,
                 external_message_digest.as_deref(),
             )
@@ -229,18 +237,11 @@ impl Package {
                 })
                 .unwrap();
 
-            const OID_SHA256: ObjectIdentifier =
-                ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.1");
-
-            let alg_id = AlgorithmIdentifier::<Any> {
-                oid: OID_SHA256,
-                parameters: Some(Any::null()),
-            };
             // let time_attr = cms::builder::create_signing_time_attribute().unwrap();
             let content_info2 = SignedDataBuilder::new(&eci)
-                .add_certificate(CertificateChoices::Certificate(sign_cert.clone()))
-                .unwrap()
                 .add_certificate(CertificateChoices::Certificate(cert.clone()))
+                .unwrap()
+                .add_certificate(CertificateChoices::Certificate(sign_cert.clone()))
                 .unwrap()
                 .add_signer_info(signer_info_builder)
                 .unwrap()
