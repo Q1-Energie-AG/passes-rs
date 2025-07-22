@@ -20,9 +20,13 @@ use cms::{
 use openssl::stack::Stack;
 use rsa::{
     pkcs1::der::referenced::RefToOwned,
-    pkcs8::der::{
-        asn1::{SetOfVec, UtcTime},
-        Encode, Tagged,
+    pkcs1v15::RsaSignatureAssociatedOid,
+    pkcs8::{
+        der::{
+            asn1::{SetOfVec, UtcTime},
+            Encode, Tagged,
+        },
+        spki::AlgorithmIdentifier,
     },
 };
 use rsa::{
@@ -120,6 +124,7 @@ impl Package {
     /// Use for creating .pkpass file
     /// # Errors
     /// Returns an error if writing fails
+    #[allow(clippy::too_many_lines)]
     pub fn write<W: Write + Seek>(&mut self, writer: W) -> Result<(), String> {
         let mut manifest = Manifest::new();
 
@@ -199,12 +204,15 @@ impl Package {
             let mut sha256 = sha2::Sha256::new();
             sha256.update(manifest_json.as_bytes());
             let digest = sha256.finalize();
+            let time = SigningTime::UtcTime(UtcTime::from_system_time(SystemTime::now()).unwrap());
 
             println!("Digest len: {}", digest.len());
             let external_message_digest = Some(digest);
-            let time = SigningTime::UtcTime(UtcTime::from_system_time(SystemTime::now()).unwrap());
             let mut time_values: SetOfVec<Any> = SetOfVec::new();
-            time_values.insert(Any::new(time.tag(), time.to_der().unwrap()).unwrap());
+            time_values
+                // .insert(Any::new(time.tag(), time.to_der().unwrap()).unwrap())
+                .insert(Any::encode_from(&time).unwrap())
+                .unwrap();
 
             let mut signer_info_builder = SignerInfoBuilder::new(
                 &signing_key,
@@ -220,13 +228,23 @@ impl Package {
                     values: time_values,
                 })
                 .unwrap();
+
+            const OID_SHA256: ObjectIdentifier =
+                ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.1");
+
+            let alg_id = AlgorithmIdentifier::<Any> {
+                oid: OID_SHA256,
+                parameters: Some(Any::null()),
+            };
             // let time_attr = cms::builder::create_signing_time_attribute().unwrap();
             let content_info2 = SignedDataBuilder::new(&eci)
-                .add_certificate(CertificateChoices::Certificate(cert.clone()))
-                .unwrap()
                 .add_certificate(CertificateChoices::Certificate(sign_cert.clone()))
                 .unwrap()
+                .add_certificate(CertificateChoices::Certificate(cert.clone()))
+                .unwrap()
                 .add_signer_info(signer_info_builder)
+                .unwrap()
+                .add_digest_algorithm(alg_id)
                 .unwrap()
                 .build()
                 .unwrap();
