@@ -1,10 +1,10 @@
-use std::error::Error;
-
 use rsa::{pkcs8::DecodePrivateKey, RsaPrivateKey};
 use x509_cert::{
     der::{Decode, DecodePem},
     Certificate,
 };
+
+use crate::error::PassError;
 
 /// Configuration for package signing.
 ///
@@ -20,12 +20,8 @@ pub struct SignConfig {
 impl SignConfig {
     /// Create new config from buffers
     /// # Errors
-    /// Returns `ErrorStack` when the certs and keys cannot be loaded
-    pub fn new(
-        wwdr: &WWDR,
-        sign_cert: &[u8],
-        sign_key: &str,
-    ) -> Result<SignConfig, Box<dyn Error>> {
+    /// Returns `PassError` when the certs and keys cannot be loaded
+    pub fn new(wwdr: &WWDR, sign_cert: &[u8], sign_key: &str) -> Result<SignConfig, PassError> {
         let cert = match wwdr {
             WWDR::G4 => Certificate::from_der(G4_CERT)?,
             WWDR::Custom(buf) => Certificate::from_pem(buf)?,

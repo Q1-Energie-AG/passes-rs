@@ -18,6 +18,14 @@ pub enum PassError {
     ASN1(der::Error),
     #[error("CMS error: {0}")]
     CmsBuilder(cms::builder::Error),
+    #[error("Failed to parse certificate")]
+    CertificateParse(rsa::pkcs8::Error),
+}
+
+impl From<rsa::pkcs8::Error> for PassError {
+    fn from(err: rsa::pkcs8::Error) -> Self {
+        PassError::CertificateParse(err)
+    }
 }
 
 impl From<ZipError> for PassError {
