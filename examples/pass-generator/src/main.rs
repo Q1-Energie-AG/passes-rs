@@ -1,4 +1,4 @@
-use passes::{resource, sign, Package, PassBuilder, PassConfig};
+use pkpass::{resource, sign, Package, PassBuilder, PassConfig};
 
 use std::fs::File;
 use std::path::Path;

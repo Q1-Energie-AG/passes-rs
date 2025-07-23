@@ -1,4 +1,4 @@
-# Passes
+# PKPass (Fork of passes-rs (https://github.com/mvodya/passes-rs))
 
 A Rust library for generating PassKit passes, featuring:
 
@@ -11,8 +11,8 @@ A Rust library for generating PassKit passes, featuring:
 
 Documentation:
 
-- [API reference (doc.rs)](https://docs.rs/passes)
-- [Examples](https://github.com/mvodya/passes-rs/tree/main/examples)
+- [API reference (doc.rs)](https://docs.rs/pkpass)
+- [Examples](https://github.com/Q1-Energie-AG/pkpass/tree/main/examples)
 - [Apple Wallet Documentation](https://developer.apple.com/documentation/walletpasses)
 
 ## Usage
@@ -21,7 +21,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-passes = "0.1.0"
+pkpass = "0.1.0"
 ```
 
 ## Example
@@ -56,7 +56,7 @@ let file = match File::create(&path) {
 package.write(file).unwrap();
 ```
 
-For more examples, see [examples](https://github.com/Q1-Energie-AG/passes-rs/tree/main/examples) directory.
+For more examples, see [examples](https://github.com/Q1-Energie-AG/pkpass/tree/main/examples) directory.
 
 ## License
 

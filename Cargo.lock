@@ -663,7 +663,7 @@ dependencies = [
 name = "pass-generator"
 version = "0.1.0"
 dependencies = [
- "passes",
+ "pkpass",
 ]
 
 [[package]]
@@ -671,26 +671,7 @@ name = "pass-generator-dal"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "passes",
-]
-
-[[package]]
-name = "passes"
-version = "1.0.1"
-dependencies = [
- "chrono",
- "cms",
- "is_empty",
- "openssl",
- "regex",
- "rsa",
- "serde",
- "serde_json",
- "sha1",
- "sha2",
- "thiserror",
- "x509-cert",
- "zip",
+ "pkpass",
 ]
 
 [[package]]
@@ -738,6 +719,25 @@ name = "pkg-config"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
+
+[[package]]
+name = "pkpass"
+version = "1.0.1"
+dependencies = [
+ "chrono",
+ "cms",
+ "is_empty",
+ "openssl",
+ "regex",
+ "rsa",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2",
+ "thiserror",
+ "x509-cert",
+ "zip",
+]
 
 [[package]]
 name = "powerfmt"

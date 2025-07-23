@@ -9,7 +9,7 @@
 //! package.
 //!
 //! ```
-//! use passes::{resource, sign, Package, PassBuilder, PassConfig};
+//! use pkpass::{resource, sign, Package, PassBuilder, PassConfig};
 //! use std::{fs::File, path::Path};
 //!
 //! // Creating a pass
@@ -46,7 +46,7 @@
 //! std::io::Read::read_to_end(&mut file_sign_key_cert, &mut sign_cert_key_data).unwrap();
 //!
 //! let sign_config =
-//!     sign::SignConfig::new(passes::sign::WWDR::G4, &sign_cert_data, &sign_cert_key_data)
+//!     sign::SignConfig::new(pkpass::sign::WWDR::G4, &sign_cert_data, &sign_cert_key_data)
 //!         .unwrap();
 //! package.add_certificates(sign_config);
 //! ```
@@ -59,7 +59,7 @@
 //! package.write(file).unwrap();
 //! ```
 //!
-//! For more examples, see [example directory](https://github.com/mvodya/passes-rs/tree/main/examples) on GitHub.
+//! For more examples, see [example directory](https://github.com/Q1-Energie-AG/pkpass/tree/main/examples) on GitHub.
 // Primary modules
 mod error;
 mod package;

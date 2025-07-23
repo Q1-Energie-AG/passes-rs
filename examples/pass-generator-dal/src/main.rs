@@ -1,12 +1,12 @@
-use passes::barcode::{Barcode, BarcodeFormat};
-use passes::fields;
-use passes::resource;
-use passes::semantic_tags;
-use passes::sign;
-use passes::sign::SignConfig;
-use passes::visual_appearance;
-use passes::Package;
-use passes::{PassBuilder, PassConfig};
+use pkpass::barcode::{Barcode, BarcodeFormat};
+use pkpass::fields;
+use pkpass::resource;
+use pkpass::semantic_tags;
+use pkpass::sign;
+use pkpass::sign::SignConfig;
+use pkpass::visual_appearance;
+use pkpass::Package;
+use pkpass::{PassBuilder, PassConfig};
 
 use chrono::Duration;
 
@@ -122,7 +122,7 @@ fn main() {
         ))
         .add_back_field(fields::Content::new(
             "githubURL",
-            "https://github.com/mvodya/passes-rs",
+            "https://github.com/Q1-Energie-AG/pkpass",
             fields::ContentOptions {
                 label: String::from("Github").into(),
                 ..Default::default()

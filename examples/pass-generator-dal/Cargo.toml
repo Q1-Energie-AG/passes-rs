@@ -8,4 +8,4 @@ publish = false
 
 [dependencies]
 chrono = "0.4.34"
-passes = { path = "../../" }
+pkpass = { path = "../../" }

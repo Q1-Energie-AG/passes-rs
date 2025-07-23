@@ -51,7 +51,7 @@ pub struct PassConfig {
 /// Example for making `Pass` with `PassConfig`:
 ///
 /// ```
-/// use passes::{PassBuilder, PassConfig};
+/// use pkpass::{PassBuilder, PassConfig};
 /// let pass = PassBuilder::new(PassConfig {
 ///     organization_name: String::from("Apple inc."),
 ///     description: String::from("Example pass"),
@@ -191,7 +191,7 @@ impl Pass {
     /// Build JSON output for pass (pass.json)
     ///
     /// ```
-    /// use passes::{PassConfig, PassBuilder};
+    /// use pkpass::{PassConfig, PassBuilder};
     ///
     /// let pass = PassBuilder::new(PassConfig {
     ///     organization_name: String::from("Apple inc."),
@@ -283,7 +283,7 @@ impl PassBuilder {
     ///
     /// ```
     /// use chrono::prelude::*;
-    /// use passes::{PassBuilder, PassConfig};
+    /// use pkpass::{PassBuilder, PassConfig};
     ///
     /// let pass = PassBuilder::new(PassConfig {
     ///     organization_name: String::from("Apple inc."),
@@ -392,7 +392,7 @@ impl PassBuilder {
     ///  Adding  `semantics`(`Pass::semantics`)
     ///
     /// ```
-    /// use passes::{PassBuilder, PassConfig, semantic_tags};
+    /// use pkpass::{PassBuilder, PassConfig, semantic_tags};
     ///
     /// let pass = PassBuilder::new(PassConfig {
     ///     organization_name: String::from("Apple inc."),
@@ -419,7 +419,7 @@ impl PassBuilder {
     ///  Adding  `fields`(`Pass::fields`)
     ///
     /// ```
-    /// use passes::{PassBuilder, PassConfig, fields};
+    /// use pkpass::{PassBuilder, PassConfig, fields};
     ///
     /// let pass = PassBuilder::new(PassConfig {
     ///     organization_name: String::from("Apple inc."),
@@ -539,7 +539,7 @@ mod tests {
         .add_associated_store_identifier(100)
         .web_service(WebService {
             authentication_token: String::from("abcdefg01234567890abcdefg"),
-            web_service_url: String::from("https://example.com/passes/"),
+            web_service_url: String::from("https://example.com/pkpass/"),
         })
         .set_sharing_prohibited(false)
         .set_suppress_strip_shine(false)
@@ -634,7 +634,7 @@ mod tests {
 
         println!("{json}");
 
-        let json_expected = r#"{"formatVersion":1,"organizationName":"Apple inc.","description":"Example pass","passTypeIdentifier":"com.example.pass","teamIdentifier":"AA00AA0A0A","serialNumber":"ABCDEFG1234567890","groupingIdentifier":"com.example.pass.app","foregroundColor":"rgb(250, 10, 10)","backgroundColor":"rgb(255, 255, 255)","logoText":"Test pass","relevantDate":"2024-02-07T00:00:00+00:00","expirationDate":"2024-02-08T00:00:00+00:00","appLaunchURL":"testapp:param?index=1","associatedStoreIdentifiers":[100],"authenticationToken":"abcdefg01234567890abcdefg","webServiceURL":"https://example.com/passes/","suppressStripShine":false,"barcodes":[{"message":"Hello world!","format":"PKBarcodeFormatQR","altText":"test by test","messageEncoding":"iso-8859-1"}],"beacons":[{"proximityUUID":"e286373b-15b5-4f4e-bf91-e9e64787724a","major":2,"minor":150,"relevantText":"The simple beacon"}],"locations":[{"latitude":37.334606,"longitude":-122.009102,"relevantText":"Apple Park, Cupertino, CA, USA"}],"maxDistance":1000,"nfc":{"encryptionPublicKey":"ABCDEFG_0011223344556677889900","message":"test message","requiresAuthentication":false},"semantics":{"airlineCode":"EX123","departureLocation":{"latitude":43.3948533,"longitude":132.1451673}},"boardingPass":{"auxiliaryFields":[{"key":"date_departure","value":"20.02.2024","label":"Departure date"}],"headerFields":[{"key":"serial","value":"1122","label":"SERIAL"},{"key":"number","value":"0011223344","label":"NUMBER","textAlignment":"PKTextAlignmentRight"}],"primaryFields":[{"key":"from","value":"UHWW","label":"FROM","textAlignment":"PKTextAlignmentLeft"},{"key":"to","value":"RKSI","label":"TO","textAlignment":"PKTextAlignmentRight"}],"transitType":"PKTransitTypeAir"}}"#;
+        let json_expected = r#"{"formatVersion":1,"organizationName":"Apple inc.","description":"Example pass","passTypeIdentifier":"com.example.pass","teamIdentifier":"AA00AA0A0A","serialNumber":"ABCDEFG1234567890","groupingIdentifier":"com.example.pass.app","foregroundColor":"rgb(250, 10, 10)","backgroundColor":"rgb(255, 255, 255)","logoText":"Test pass","relevantDate":"2024-02-07T00:00:00+00:00","expirationDate":"2024-02-08T00:00:00+00:00","appLaunchURL":"testapp:param?index=1","associatedStoreIdentifiers":[100],"authenticationToken":"abcdefg01234567890abcdefg","webServiceURL":"https://example.com/pkpass/","suppressStripShine":false,"barcodes":[{"message":"Hello world!","format":"PKBarcodeFormatQR","altText":"test by test","messageEncoding":"iso-8859-1"}],"beacons":[{"proximityUUID":"e286373b-15b5-4f4e-bf91-e9e64787724a","major":2,"minor":150,"relevantText":"The simple beacon"}],"locations":[{"latitude":37.334606,"longitude":-122.009102,"relevantText":"Apple Park, Cupertino, CA, USA"}],"maxDistance":1000,"nfc":{"encryptionPublicKey":"ABCDEFG_0011223344556677889900","message":"test message","requiresAuthentication":false},"semantics":{"airlineCode":"EX123","departureLocation":{"latitude":43.3948533,"longitude":132.1451673}},"boardingPass":{"auxiliaryFields":[{"key":"date_departure","value":"20.02.2024","label":"Departure date"}],"headerFields":[{"key":"serial","value":"1122","label":"SERIAL"},{"key":"number","value":"0011223344","label":"NUMBER","textAlignment":"PKTextAlignmentRight"}],"primaryFields":[{"key":"from","value":"UHWW","label":"FROM","textAlignment":"PKTextAlignmentLeft"},{"key":"to","value":"RKSI","label":"TO","textAlignment":"PKTextAlignmentRight"}],"transitType":"PKTransitTypeAir"}}"#;
 
         assert_eq!(json_expected, json);
 

@@ -1,5 +1,5 @@
 [package]
-name = "passes"
+name = "pkpass"
 description = "Rust library for generate Apple Wallet Passes for iOS, WatchOS, MacOS."
 version = "1.0.1"
 edition = "2021"
@@ -9,8 +9,8 @@ readme = "README.md"
 include = ["src/", "LICENSE", "README.md"]
 keywords = ["passkit", "wallet", "apple"]
 categories = ["parsing"]
-documentation = "https://docs.rs/passes/latest/passes/"
-repository = "https://github.com/mvodya/passes-rs"
+documentation = "https://docs.rs/pkpass/latest/pkpass/"
+repository = "https://github.com/Q1-Energie-AG/pkpass"
 
 [workspace]
 members = ["examples/pass-generator", "examples/pass-generator-dal"]
