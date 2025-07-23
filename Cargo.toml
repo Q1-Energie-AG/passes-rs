@@ -3,7 +3,10 @@ name = "pkpass"
 description = "Rust library for generate Apple Wallet Passes for iOS, WatchOS, MacOS."
 version = "1.0.1"
 edition = "2021"
-authors = ["Mark Vodyanitskiy <mvodya@icloud.com>"]
+authors = [
+    "Kevin Seidel <k.seidel@q1.eu>",
+    "Mark Vodyanitskiy <mvodya@icloud.com>",
+]
 license = "MIT"
 readme = "README.md"
 include = ["src/", "LICENSE", "README.md"]
