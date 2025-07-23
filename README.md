@@ -1,4 +1,4 @@
-# PKPass (Fork of passes-rs (https://github.com/mvodya/passes-rs))
+# PKPass (Fork of [passes-rs](https://github.com/mvodya/passes-rs))
 
 A Rust library for generating PassKit passes, featuring:
 
