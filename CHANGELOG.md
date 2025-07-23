@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 (2025-07-23)
+
+### Fixed
+
+- Reexport `PassError` from the `error` module.
+
 ## 1.0.1 (2025-07-23)
 
 ### Fixed
