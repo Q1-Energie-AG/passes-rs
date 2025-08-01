@@ -10,7 +10,7 @@ use crate::error::PassError;
 ///
 /// Contains WWDR (Apple Worldwide Developer Relations), Signer Certificate (Developer), Signer Certificate Key (Developer)
 /// certificate for pass signing with private key
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignConfig {
     pub sign_key: RsaPrivateKey,
     pub cert: Certificate,
