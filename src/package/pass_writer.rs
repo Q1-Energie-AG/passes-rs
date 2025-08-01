@@ -82,10 +82,11 @@ where
 
 /// Create a signature for the given manifest data using the provided `SignConfig`.
 fn sign(sign_config: &SignConfig, manifest_data: &[u8]) -> Result<Vec<u8>, PassError> {
+    let tbs_cert = sign_config.sign_cert.clone().tbs_certificate;
     let signing_key: SigningKey<Sha256> = SigningKey::new(sign_config.sign_key.clone());
     let signer_id = SignerIdentifier::IssuerAndSerialNumber(IssuerAndSerialNumber {
-        issuer: sign_config.sign_cert.clone().tbs_certificate.issuer,
-        serial_number: sign_config.sign_cert.clone().tbs_certificate.serial_number,
+        issuer: tbs_cert.issuer,
+        serial_number: tbs_cert.serial_number,
     });
     let encapsulated_content_info = EncapsulatedContentInfo {
         econtent: None,
